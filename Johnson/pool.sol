@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./LoanContract.sol";
 
+
 contract LoanPool {
     struct LoanRecord {
         address loanContractAddress;
