@@ -30,6 +30,8 @@ contract LoanManager {
     event LoanRequestAccepted(address indexed loanAddress);
     event LoanTransfered(address indexed borrower, uint loanAmount, bool isEth);
 
+
+
     constructor(IERC20 _wBtc) {
         // Set contract creator as the manager
         manager = msg.sender;
@@ -40,6 +42,7 @@ contract LoanManager {
         // Address of WBTC on ethereum
         wBtc = _wBtc;
     }
+
 
     function requestLoan(uint loanAmount, bool isEth) public {
         // Check if the requested loan amount is valid

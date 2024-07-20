@@ -30,6 +30,7 @@ contract LoanContract {
         emit LoanCreated(borrower, loanAmount, isEth, requestAccepted);
     }
 
+
     function depositEthCollateral() public payable borrowerRestricted requestPending ethOnly {
         // Paid collateral must be greater than the expected collateral amount
         // msg.value is the amount of eth sent by the borrower along with the transaction
@@ -38,6 +39,7 @@ contract LoanContract {
 
         emit CollateralDeposited(borrower, collateralPaid);
     }
+
 
     function depositBtcCollateral(uint wBtcCollateral) public borrowerRestricted requestPending btcOnly {
         // WBTC collateral must be greater than the expected collateral amount
@@ -48,6 +50,8 @@ contract LoanContract {
 
         emit CollateralDeposited(borrower, collateralPaid);
     }
+
+
 
     function setRequestAccepted(bool status) external {
         requestAccepted = status;
