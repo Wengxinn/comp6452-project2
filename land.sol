@@ -78,4 +78,10 @@ contract LendingPool {
     function balanceOf(address userAddress) override public view returns (uint256) {
          return userBalance[userAddress];
     }
+    function updateBalance(address _userAddress) internal {
+        if (userBalance[_userAddress] > 0) {
+            uint256 interest = interestCalculator(deposits[_userAddress].amount);
+            userBalance[_userAddress] += interest;
+            deposits[_userAddress].depositTime = block.timestamp;
+        }
 }
