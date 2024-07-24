@@ -12,6 +12,14 @@ interface IERC20 {
 }
 
 contract LendingPool {
+    mapping(address => uint256)public userBalance;
+    mapping(address => uint256[])public WithdrawTime;
+    event Withdrawn(
+        address userAddress, 
+        uint256 amount,
+        uint256 withdrawTime
+    );
+
     // Define the structure of a deposit
     struct Deposit {
         address depositAccount;
@@ -55,5 +63,19 @@ contract LendingPool {
             depositTime: block.timestamp,
             withdrawn: false
         });
+    }
+    // withdraw
+    function withdraw(uint256 _amount) payable external  {
+         require(_amount > 0,"Please enter a valid amount");
+         require(_amount <= userBalance[msg.sender], "Insufficient balance");
+         userBalance[msg.sender] -= _amount;
+         payable(msg.sender).transfer(_amount);
+         WithdrawTime[msg.sender].push(block.timestamp);
+        emit Withdrawn(msg.sender, _amount,block.timestamp);
+
+    }
+    //check the balace 
+    function balanceOf(address userAddress) override public view returns (uint256) {
+         return userBalance[userAddress];
     }
 }
