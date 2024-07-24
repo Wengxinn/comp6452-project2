@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./BorrowContract.sol";
+import "./WBTC.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
@@ -30,7 +31,7 @@ contract Manager {
   uint public totalLoans;
 
   // List of addresses of loans (address, BorrowContract)
-  mapping (address => BorrowContract) private loans;
+  mapping (address => BorrowContract) public loans;
   
   // List to track if loan exists (loan address, bool)
   mapping (address => bool) private _loanExists;
@@ -57,6 +58,8 @@ contract Manager {
 
     // Set initial number of loans
     totalLoans = 0;
+
+    wBtc = new WBTC(1000000000000000000000000);
   }
 
   function setWBTCAddress(address _wBtc) public {
@@ -85,20 +88,20 @@ contract Manager {
 
 
   // Function to check if the user already has enough collateral for a loan
-  function _checkEnoughCollateral(address user, uint collateralAmount, bool wantBTC) private view returns (bool) {
-    // If user collateral record doesn't exist, return false
-    // If exist, check if the corresponding collateral amount is sufficient for the loan
-    if (!_collateralExists[user]) {
-        return false;
-    } else {
-        UserCollateral memory c = collaterals[user];
-        if (wantBTC) {
-            return (c.wBtcAmount >= collateralAmount);
-        } else {
-            return (c.ethAmount >= collateralAmount);
-        }
-    }
-  }
+  // function _checkEnoughCollateral(address user, uint collateralAmount, bool wantBTC) private view returns (bool) {
+  //   // If user collateral record doesn't exist, return false
+  //   // If exist, check if the corresponding collateral amount is sufficient for the loan
+  //   if (!_collateralExists[user]) {
+  //       return false;
+  //   } else {
+  //       UserCollateral memory c = collaterals[user];
+  //       if (wantBTC) {
+  //           return (c.wBtcAmount >= collateralAmount);
+  //       } else {
+  //           return (c.ethAmount >= collateralAmount);
+  //       }
+  //   }
+  // }
 
 
   // Function to deploy a new BorrowContract, but not yet set the collateral
@@ -130,30 +133,6 @@ contract Manager {
   }
 
 
-  // Function to get the exchangeRate of a specific BorrowContract
-  function getBorrowContractExchangeRate(address borrowContractAddress) public view returns (uint) {
-    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-    return borrowContract.exchangeRate();
-  }
-
-  // Function to get the needed collateral amount of a specific BorrowContract
-  function getCollateralAmount(address borrowContractAddress) public view returns (uint) {
-    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-    return borrowContract.collateralAmount();
-  }
-
-  // Function to get the status of a specific BorrowContract
-  function getBorrowContractStatus(address borrowContractAddress) public view returns (bool) {
-    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-    return borrowContract.activated();
-  }
-
-  function getBorrowContractCreator(address borrowContractAddress) public view returns (address) {
-    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-    return borrowContract.creditors();
-  }
-
-
   // Function to deposit collateral to a specific BorrowContract
   function depositCollateralETH(address borrowContractAddress) public payable {
     // Check if the BorrowContract exists
@@ -173,7 +152,7 @@ contract Manager {
   function depositCollateralBTC(address borrowContractAddress, uint _wBtcCollateral) public {
     // Check if the BorrowContract exists
     require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
-    require(msg.sender == BorrowContract(msg.sender).borrower(), "Only borrower can deposit collateral");
+    require(msg.sender == BorrowContract(borrowContractAddress).borrower(), "Only borrower can deposit collateral");
 
     BorrowContract borrowContract = BorrowContract(borrowContractAddress);
     if (!borrowContract.wantBTC()) {
@@ -186,7 +165,7 @@ contract Manager {
 
 
   function checkWBTCBalance() public view returns (uint) {
-    return wBtc.balanceOf(address(this));
+    return wBtc.balanceOf(address(msg.sender));
   }
 
 
@@ -195,10 +174,36 @@ contract Manager {
     require(msg.sender == owner, "Only owner can fund wBTC");
     require(amount > 0, "Amount must be greater than 0");
     // Check if the contract has enough wBTC to transfer
-    uint contractBalance = wBtc.balanceOf(address(this));
+    uint contractBalance = wBtc.balanceOf(owner);
     require(contractBalance >= amount, "Contract does not have enough wBTC");
 
     // Transfer wBTC to the user
     require(wBtc.transfer(user, amount), "WBTC transfer failed");
   }
 }
+
+// ====================================================================================================
+
+  // Function to get the exchangeRate of a specific BorrowContract
+  function getBorrowContractExchangeRate(address borrowContractAddress) public view returns (uint) {
+    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+    return borrowContract.exchangeRate();
+  }
+
+
+  // Function to get the needed collateral amount of a specific BorrowContract
+  function getCollateralAmount(address borrowContractAddress) public view returns (uint) {
+    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+    return borrowContract.collateralAmount();
+  }
+
+  // Function to get the status of a specific BorrowContract
+  function getBorrowContractStatus(address borrowContractAddress) public view returns (bool) {
+    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+    return borrowContract.activated();
+  }
+
+  function getBorrowContractCreator(address borrowContractAddress) public view returns (address) {
+    BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+    return borrowContract.creditors();
+  }
