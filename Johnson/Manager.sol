@@ -60,6 +60,7 @@ contract Manager {
     totalLoans = 0;
 
     wBtc = new WBTC(msg.sender, 1000000000000000000000000);
+    approveWBTC(1000000000000000000000000);
   }
 
   function setWBTCAddress(address _wBtc) public {
@@ -77,8 +78,10 @@ contract Manager {
   function approveWBTC(uint amount) public {
     require(msg.sender == owner, "Only owner can approve wBTC");
     require(amount > 0, "Amount must be greater than 0");
+    require(wBtc.approve(owner, amount), "Approval failed");
     require(wBtc.approve(address(this), amount), "Approval failed");
   }
+
 
 
   // Function to calculate the collateral amount needed for a loan
@@ -168,6 +171,8 @@ contract Manager {
 
     if (!borrowContract.wantBTC()) {
       borrowContract.depositCollateralBTC(_wBtcCollateral);
+
+      require(wBtc.transferFrom(msg.sender, owner, _wBtcCollateral), "WBTC transfer failed");
     } else {
       revert("This BorrowContract does not support BTC collateral");
     }
@@ -175,8 +180,8 @@ contract Manager {
   }
 
 
-  function checkWBTCBalance() public view returns (uint) {
-    return wBtc.balanceOf(address(msg.sender));
+  function checkWBTCBalance(address user) public view returns (uint) {
+    return wBtc.balanceOf(user);
   }
 
 
@@ -188,8 +193,8 @@ contract Manager {
     uint contractBalance = wBtc.balanceOf(owner);
     require(contractBalance >= amount, "Contract does not have enough wBTC");
 
-    // Transfer wBTC to the user
-    require(wBtc.transfer(user, amount), "WBTC transfer failed");
+    // Transfer wBTC to the user from the owner
+    require(wBtc.transferFrom(owner, user, amount), "WBTC transfer failed");
   }
 
   // ====================================================================================================
@@ -222,4 +227,5 @@ contract Manager {
   function getOwnerEthBalance() public view returns (uint) {
     return owner.balance;
   }
+
 }
