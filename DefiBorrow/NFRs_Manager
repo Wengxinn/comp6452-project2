@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.0
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "optimism-rollup/contracts/rollup/OptimismRollup.sol";
+
+
+// Security: Multi-Factor Authentication (MFA) by implementing MFA verification in the borrow function.
 
 contract LoanManager is ReentrancyGuard {
     mapping(address => uint256) private borrowedAmounts;
