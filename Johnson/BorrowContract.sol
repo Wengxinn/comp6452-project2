@@ -42,8 +42,10 @@ contract BorrowContract {
     }
 
 
-    function depositCollateralETH() public payable {
+    function depositCollateralETH(address receiver) public payable {
         require((msg.value / 1 ether) == collateralAmount, "Incorrect ETH collateral amount");
+        // Transfer the collateral to the contract
+        payable(receiver).transfer(msg.value);
         emit CollateralDeposited(borrower, msg.value, wantBTC);
         activated = true;
     }

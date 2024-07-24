@@ -59,7 +59,7 @@ contract Manager {
     // Set initial number of loans
     totalLoans = 0;
 
-    wBtc = new WBTC(1000000000000000000000000);
+    wBtc = new WBTC(msg.sender, 1000000000000000000000000);
   }
 
   function setWBTCAddress(address _wBtc) public {
@@ -110,6 +110,13 @@ contract Manager {
   function deployBorrowContract(uint brorowAmount, bool wantBTC) public returns (address) {
       require(brorowAmount > 0, "Borrow amount must be greater than 0");
 
+      // Check if the owner has enough currency to lend
+      if (wantBTC) {
+        require(wBtc.balanceOf(owner) >= brorowAmount, "Owner does not have enough wBTC");
+      } else {
+        require(owner.balance >= brorowAmount, "Owner does not have enough ETH");
+      }
+
       // Get the current exchange rate.
       uint currentExchangeRate = _getExchangeRate();
 
@@ -133,15 +140,17 @@ contract Manager {
   }
 
 
-  // Function to deposit collateral to a specific BorrowContract
+
+  // Function to deposit collateral to a specific BorrowContract -> Deposit ETH
   function depositCollateralETH(address borrowContractAddress) public payable {
     // Check if the BorrowContract exists
     require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
-    require(msg.sender == BorrowContract(borrowContractAddress).borrower(), "Only borrower can deposit collateral");
-
     BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+
+    require(msg.sender == borrowContract.borrower(), "Only borrower can deposit collateral");
+
     if (borrowContract.wantBTC()) {
-      borrowContract.depositCollateralETH{value: msg.value}();
+      borrowContract.depositCollateralETH{value: msg.value}(owner);
     } else {
       revert("This BorrowContract does not support ETH collateral");
     }
@@ -149,12 +158,14 @@ contract Manager {
   }
 
 
+
+  // Function to deposit collateral to a specific BorrowContract -> Deposit wBTC
   function depositCollateralBTC(address borrowContractAddress, uint _wBtcCollateral) public {
     // Check if the BorrowContract exists
     require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
-    require(msg.sender == BorrowContract(borrowContractAddress).borrower(), "Only borrower can deposit collateral");
-
     BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+    require(msg.sender == borrowContract.borrower(), "Only borrower can deposit collateral");
+
     if (!borrowContract.wantBTC()) {
       borrowContract.depositCollateralBTC(_wBtcCollateral);
     } else {
@@ -180,9 +191,8 @@ contract Manager {
     // Transfer wBTC to the user
     require(wBtc.transfer(user, amount), "WBTC transfer failed");
   }
-}
 
-// ====================================================================================================
+  // ====================================================================================================
 
   // Function to get the exchangeRate of a specific BorrowContract
   function getBorrowContractExchangeRate(address borrowContractAddress) public view returns (uint) {
@@ -207,3 +217,9 @@ contract Manager {
     BorrowContract borrowContract = BorrowContract(borrowContractAddress);
     return borrowContract.creditors();
   }
+
+  // Function to get the amount of ETH owned by the owner
+  function getOwnerEthBalance() public view returns (uint) {
+    return owner.balance;
+  }
+}
