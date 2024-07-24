@@ -1,21 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+
 contract BorrowContract {
 
     // For now, fixed exchange rate: 1 BTC = 10 ETH
     uint public exchangeRate;
 
+    address public creditors;
+
     address public borrower;
+
     uint public borrowAmount;
 
-    bool public activated = false;
+    bool public activated;
 
+    uint256 public collateralAmount;
 
-    // Needed collateral amount
-    // If wantBTC is true, collateralAmount = borrowAmount * exchangeRate
-    // If wantBTC is false, collateralAmount = borrowAmount / exchangeRate
-    uint public collateralAmount;
+    // Wrapped BTC token
+    IERC20 public wBtc;
 
 
     // true if borrowing BTC, false if borrowing ETH
@@ -24,25 +29,32 @@ contract BorrowContract {
 
     event CollateralDeposited(address indexed borrower, uint amount, bool isETH);
 
-    constructor(address _borrower, uint _borrowAmount, bool _wantBTC, uint _exchangeRate) {
+
+    constructor(address _borrower, IERC20 _wBtc, uint _borrowAmount, bool _wantBTC, uint _collateralAmount, uint _exchangeRate, bool _activated) {
         borrower = _borrower;
+        creditors = msg.sender;
+        wBtc = _wBtc;
         borrowAmount = _borrowAmount;
         wantBTC = _wantBTC;
+        collateralAmount = _collateralAmount;
         exchangeRate = _exchangeRate;
-        collateralAmount = wantBTC ? _borrowAmount * _exchangeRate : _borrowAmount / _exchangeRate;
+        activated = _activated;
     }
 
-    function depositCollateral() public isOwner payable {
-        require(msg.sender == borrower, "Only borrower can deposit collateral");
-        if (wantBTC) {
-            require(msg.value == collateralAmount, "Incorrect ETH collateral amount");
-        } else {
-            require(msg.value == collateralAmount, "Incorrect BTC collateral amount");
-        }
 
+    function depositCollateralETH() public payable {
+        require((msg.value / 1 ether) == collateralAmount, "Incorrect ETH collateral amount");
         emit CollateralDeposited(borrower, msg.value, wantBTC);
         activated = true;
     }
+
+    function depositCollateralBTC(uint _wBtcCollateral) public {
+        require(_wBtcCollateral == collateralAmount, "Incorrect BTC collateral amount");
+        emit CollateralDeposited(borrower, _wBtcCollateral, wantBTC);
+        activated = true;
+    }
+
+
 
     modifier isOwner {
         require(msg.sender == borrower, "Only borrower can call this function");

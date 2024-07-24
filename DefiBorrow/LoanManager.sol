@@ -161,6 +161,12 @@ contract LoanManager {
         emit UserCollateralUpdated(user, amount, isEthCollateral);
     }
 
+
+
+
+
+
+
     function _calculateCollateralAmount(uint loanAmount, bool isEth) private pure returns (uint collateralAmount) {
         // Pay equal value of BTC as collateral if borrow ETH and vice versa
         if (isEth) {
