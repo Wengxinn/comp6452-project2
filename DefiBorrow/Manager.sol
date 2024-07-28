@@ -350,7 +350,7 @@ contract Manager {
     /**
     * @dev Get the current 30-day ETH apr and update the variable
     *
-    * @return Current 30-day ETH apr returned by oracle
+    * @return Current 30-day ETH apr stored in 7 decimals returned by oracle
     **/
     function _getEth30DayApr() private returns (uint) {
         eth30DayApr = uint(_oracle.getLatestEth30DayApr());
@@ -361,7 +361,7 @@ contract Manager {
     /**
     * @dev Get the current 1-Day BTC interest rate benchmark curve 
     *
-    * @return Current 1-Day BTC interest rate benchmark curve  returned by oracle
+    * @return Current 1-Day BTC interest rate benchmark curve stored in 8 decimals returned by oracle
     **/
     function _getBtc1DayBaseRate() private returns (uint) {
         btc1DayBaseRate = uint(_oracle.getBtc1DayBaseRate());
@@ -390,31 +390,43 @@ contract Manager {
 
 
     function _calculateInterest(uint _days, bool wantBTC) private returns (uint) {
+        // Compute daily rate according to the data fed from oracle
+        // For eth, apr is compounded monthly, so need to be divided by 30
         uint dailyRate;
         if (wantBTC) {
-            dailyRate = (_getBtc1DayBaseRate() * 10**8) / 100;
+            // Data stored in 8 decimals
+            dailyRate = (_getBtc1DayBaseRate()) / 100;
+            // Convert to 7 decimals for consistency with eth
+            dailyRate = dailyRate / 10;
         } else {
-            dailyRate = (_getEth30DayApr() * 10**7) / (30 * 100);
+            // Data stored in 7 decimals
+            dailyRate = (_getEth30DayApr()) / (30 * 100);
         }
 
+        // Compute compound interest according to the duration of loan (days)
+        // Base
         uint compoundFactor = 10**7 + dailyRate;
-        // Compute compound interest using exponentiation by squaring
-        // Start with 1e7
+        // Exponentiation by squaring
+        // Start with 1 (1e7 in 7 decimals)
         uint256 compoundInterest = 10**7; 
         uint compoundExponent = _days;
         while (compoundExponent > 0) {
+            // Odd exp: compoundInterest * compoundFactor (result * base)
             if (compoundExponent % 2 == 1) {
                 compoundInterest = (compoundInterest * compoundFactor) / 10**7;
             }
+            // Square base
             compoundFactor = (compoundFactor * compoundFactor) / 10**7;
+            // Half the exponent (integer division)
             compoundExponent /= 2;
         }
-
         return compoundInterest;
     }
 
     function _calculateTotalRepaymentAmount(uint loanAmount, uint _days, bool wantBTC) private returns (uint) {
-        uint compoundInterest = _calculateInterest(_days, wantBTC);
+        // Get compound interest stored in 7 decimals and convert to 
+        uint compoundInterest7Decimals = _calculateInterest(_days, wantBTC);
+        uint compoundInterest = compoundInterest7Decimals / 10**7;
         return loanAmount * compoundInterest;
     }
 
