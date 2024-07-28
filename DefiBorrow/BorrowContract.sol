@@ -7,24 +7,32 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BorrowContract {
 
-    // For now, fixed exchange rate: 1 BTC = 10 ETH
-    uint public exchangeRate;
-
-    address public creditors;
-
-    address public borrower;
-
-    uint public borrowAmount;
-
-    bool public activated;
-
-    uint256 public collateralAmount;
-
     // Wrapped BTC token
     IERC20 public wBtc;
 
+    // Contract creator
+    address public creator;
+
+    // Borrower address
+    address public borrower;
+
+    // Loan amount
+    uint public borrowAmount;
+
+    // Required collteral amount
+    uint256 public collateralAmount;
+
+    // BTC price in ETH when the loan request is initiated
+    uint public btcInEthPrice;
+
+    // Daily interest rate when the loan request is initiated
+    uint public dailyInterestRate;
+
     // True if borrowing BTC, false if borrowing ETH
     bool public wantBTC;
+
+    // True if contract has been activated, after collateral is deposited
+    bool public activated;
 
     // ===========================================================================================================================================================
 
@@ -32,14 +40,15 @@ contract BorrowContract {
 
     // ===========================================================================================================================================================
 
-    constructor(address _borrower, IERC20 _wBtc, uint _borrowAmount, bool _wantBTC, uint _collateralAmount, uint _exchangeRate, bool _activated) {
+    constructor(address _borrower, IERC20 _wBtc, uint _borrowAmount, bool _wantBTC, uint _collateralAmount, uint _btcInEthPrice, uint _dailyInterestRate, bool _activated) {
         borrower = _borrower;
-        creditors = msg.sender;
+        creator = msg.sender;
         wBtc = _wBtc;
         borrowAmount = _borrowAmount;
         wantBTC = _wantBTC;
         collateralAmount = _collateralAmount;
-        exchangeRate = _exchangeRate;
+        btcInEthPrice = _btcInEthPrice;
+        dailyInterestRate = _dailyInterestRate;
         activated = _activated;
     }
 
@@ -76,5 +85,52 @@ contract BorrowContract {
         require(wBtc.transferFrom(borrower, receiver, collateralAmount), "WBTC transfer failed");
         emit CollateralDeposited(borrower, _wBtcCollateral, wantBTC);
         activated = true;
+    }
+
+
+       /**
+    * @dev Calculate compound interest following formula: (1 + daily rate) ** day, 
+    *      taking into account the loan duration in days, and daily interest rate
+    *
+    * @param _days Loan duration in days
+    * @param dailyRate Daily interest rate
+    *
+    * @return Compund interest stored in 7 decimals
+    **/
+    function _calculateInterest(uint _days, uint dailyRate) private pure returns (uint) {
+        // Compute compound interest according to the duration of loan (days)
+        // Base
+        uint compoundFactor = 10**7 + dailyRate;
+        // Exponentiation by squaring
+        // Start with 1 (1e7 in 7 decimals)
+        uint256 compoundInterest = 10**7; 
+        uint compoundExponent = _days;
+        while (compoundExponent > 0) {
+            // Odd exp: compoundInterest * compoundFactor (result * base)
+            if (compoundExponent % 2 == 1) {
+                compoundInterest = (compoundInterest * compoundFactor) / 10**7;
+            }
+            // Square base
+            compoundFactor = (compoundFactor * compoundFactor) / 10**7;
+            // Half the exponent (integer division)
+            compoundExponent /= 2;
+        }
+        return compoundInterest;
+    }
+
+
+    /**
+    * @dev Calculate total repayment amount corresponding to the loan request
+    * taking into account the compound interest for specific duration in days
+    *
+    * @param loanAmount Amount of loan request
+    * @param _days Loan duration in days
+    *
+    * @return Total repayment amount required for the loan request stored in 7 decimals
+    **/
+    function _calculateTotalRepaymentAmount(uint loanAmount, uint _days) private view returns (uint) {
+        // Get compound interest stored in 7 decimals
+        uint compoundInterest7Decimals = _calculateInterest(_days, dailyInterestRate);
+        return loanAmount * compoundInterest7Decimals;
     }
 }

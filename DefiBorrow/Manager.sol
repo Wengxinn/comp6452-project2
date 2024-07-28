@@ -19,24 +19,17 @@ contract Manager {
         uint wBtcAmount;
     }
 
-
-    // BEth price in Eth => How much Eth equivalent to 1 Btc
-    uint public btcInEthPrice;
-
-    // 30-day Eth Apr (Annual percentage reward)
-    uint public eth30DayApr;
-
-    // 1-Day Btc Interest Rate Benchmark Curve
-    uint public btc1DayBaseRate;
-
-    // Collateralisation rate
-    uint public collateralisationRate;
+    // Collateralisation rate (%)
+    uint public COLLATERALISATIONRATE;
 
     // The owner of the manager, this address will be the pool address (assumption)
     address public owner;
 
     // Wrapped BTC token
     IERC20 public wBtc;
+
+    // Oracle
+    Oracle_ private _oracle;
 
     // Total number of loans in the pool
     uint public totalLoans;
@@ -53,9 +46,6 @@ contract Manager {
     // List to track if user collateral exists (user address, bool)
     mapping (address => bool) private _collateralExists;
 
-    // Oracle
-    Oracle_ private _oracle;
-
 
     // ===========================================================================================================================================================
     
@@ -64,7 +54,7 @@ contract Manager {
     event BorrowContractInitialized(address BorrowContractAddress, uint borrowAmount, bool wantBTC, bool activated);
 
     // Event to be emiited when a new BorrowContract is activated
-    event BorrowContractActivated(address BorrowContractAddress, uint borrowAmount, bool wantBTC, uint exchangeRate);
+    event BorrowContractActivated(address BorrowContractAddress, uint borrowAmount, bool wantBTC, uint btcInEthPrice);
     
     
     // ===========================================================================================================================================================
@@ -77,8 +67,8 @@ contract Manager {
         // Set initial number of loans
         totalLoans = 0;
 
-        // ETH collateralisation rate
-        collateralisationRate = 150;
+        // Collateralisation rate
+        COLLATERALISATIONRATE = 150;
 
         // Deploy WBTC contract and assign wBTC address
         address _wBtc = address(new WBTC(1000000000000000000000000));
@@ -89,10 +79,6 @@ contract Manager {
         // address _eth30DayAprFeedAddress = 0xceA6Aa74E6A86a7f85B571Ce1C34f1A60B77CD29;
         // address _btc1DayBaseRateFeedAddress = 0x7DE89d879f581d0D56c5A7192BC9bDe3b7a9518e;
         _oracle = new Oracle_();
-        // Initial fed data
-        btcInEthPrice = _getBtcInEtcPrice();
-        eth30DayApr = _getEth30DayApr();
-        btc1DayBaseRate = _getBtc1DayBaseRate();
     }
 
 
@@ -109,26 +95,28 @@ contract Manager {
     function deployBorrowContract(uint borrowAmount, bool wantBTC) public returns (address) {
         require(borrowAmount > 0, "Borrow amount must be greater than 0");
 
-        // Check if the owner has enough currency to lend
+        // Check if the currency has enough currency to lend
         if (wantBTC) {
-            require(wBtc.balanceOf(owner) >= borrowAmount, "Owner does not have enough wBTC");
+            require(wBtc.balanceOf(address(this)) >= borrowAmount, "Insufficient wBTC in the pool");
         } else {
-            require(owner.balance >= borrowAmount, "Owner does not have enough ETH");
+            require(address(this).balance >= borrowAmount, "Insufficient ETH in the pool");
         }
 
-        // Get the current exchange rate.
-        uint currentExchangeRate = 10;
+        // Current btc price in eth => How much Eth equivalent to 1 Btc
+        uint btcInEthPrice = _getBtcInEtcPrice();
 
         // Calculate collateral amount required
-        // uint collateralAmount = _calculateCollateralAmount(borrowAmount, wantBTC);
-        uint collateralAmount = 1;
+        uint collateralAmount = _calculateCollateralAmount(borrowAmount, wantBTC, btcInEthPrice);
+
+        // Get current daily interest correponding to the currency of the loan
+        uint dailyInterestRate = _getDailyInterestRate(wantBTC);
 
         // Check borrower's held collateral (if any)
         // If borrower has sufficient collateral, accept the request straightaway
         // bool sufficientCollateral = _checkEnoughCollateral(msg.sender, collateralAmount, wantBTC);
         
         // Create new loan instance
-        BorrowContract newBorrowContract = new BorrowContract(msg.sender, wBtc, borrowAmount, wantBTC, collateralAmount, currentExchangeRate, false);
+        BorrowContract newBorrowContract = new BorrowContract(msg.sender, wBtc, borrowAmount, wantBTC, collateralAmount, btcInEthPrice, dailyInterestRate, false);
 
         // Add loan address to the pool
         loans[msg.sender] = newBorrowContract;
@@ -164,7 +152,7 @@ contract Manager {
         } else {
             revert("This BorrowContract does not support ETH collateral");
         }
-        emit BorrowContractActivated(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC(), borrowContract.exchangeRate());
+        emit BorrowContractActivated(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC(), borrowContract.btcInEthPrice());
     }
 
 
@@ -187,7 +175,7 @@ contract Manager {
         } else {
             revert("This BorrowContract does not support BTC collateral");
         }
-        emit BorrowContractActivated(msg.sender, borrowContract.borrowAmount(), borrowContract.wantBTC(), borrowContract.exchangeRate());
+        emit BorrowContractActivated(msg.sender, borrowContract.borrowAmount(), borrowContract.wantBTC(), borrowContract.btcInEthPrice());
     }
 
 
@@ -195,14 +183,12 @@ contract Manager {
 
 
     /**
-    * @dev Check how much remaining of the contract's owner WBTC allowance
-    *      which can only be invoked by the contract owner
+    * @dev Check how much remaining of the spender's WBTC allowance
     *
-    * @return Contract's owner remaining allowance
+    * @return Spender's remaining allowance over the owner
     **/
-    function checkAllowance() public view returns(uint) {
-        require(msg.sender == owner, "Only owner can approve wBTC");
-        return wBtc.allowance(address(this), owner);
+    function checkAllowance(address _owner, address _spender) public view returns(uint) {
+        return wBtc.allowance(_owner, _spender);
     }
 
 
@@ -267,16 +253,16 @@ contract Manager {
     
 
     /**
-    * @dev Get the exchange rate between ETH and BTC of the specified BorrowContract
+    * @dev Get the borrow amount of the specified BorrowContract
     *
     * @param borrowContractAddress Address of BorrowContract
     *
-    * @return Exchange rate
+    * @return Borrow amount corresponding to the loan
     *
     **/
-    function getBorrowContractExchangeRate(address payable borrowContractAddress) public view returns (uint) {
+    function getBorrowContractBorrowAmount(address payable borrowContractAddress) public view returns (uint) {
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-        return borrowContract.exchangeRate();
+        return borrowContract.borrowAmount();
     }
 
 
@@ -288,9 +274,51 @@ contract Manager {
     * @return Collateral amount corresponding to the loan
     *
     **/
-    function getCollateralAmount(address payable borrowContractAddress) public view returns (uint) {
+    function getBorrowContractCollateralAmount(address payable borrowContractAddress) public view returns (uint) {
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
         return borrowContract.collateralAmount();
+    }
+
+
+    /**
+    * @dev Get the current BTC price in ETH of the specified BorrowContract
+    *
+    * @param borrowContractAddress Address of BorrowContract
+    *
+    * @return Current BTC price in ETH
+    *
+    **/
+    function getBorrowContractBtcInEthPrice(address payable borrowContractAddress) public view returns (uint) {
+        BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+        return borrowContract.btcInEthPrice();
+    }
+
+
+    /**
+    * @dev Get the daily interest rate of the specified BorrowContract
+    *
+    * @param borrowContractAddress Address of BorrowContract
+    *
+    * @return Daily interest rate corresponding to the loan
+    *
+    **/
+    function getBorrowContractDailyInterestRate(address payable borrowContractAddress) public view returns (uint) {
+        BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+        return borrowContract.dailyInterestRate();
+    }
+
+
+    /**
+    * @dev Get the currency (BTC or ETH) of the specified BorrowContract
+    *
+    * @param borrowContractAddress Address of BorrowContract
+    *
+    * @return Currency of the loan (is in BTC)
+    *
+    **/
+    function getBorrowContractWantBTC(address payable borrowContractAddress) public view returns (bool) {
+        BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+        return borrowContract.wantBTC();
     }
 
 
@@ -309,6 +337,20 @@ contract Manager {
 
 
     /**
+    * @dev Get the borrower address of the specified BorrowContract
+    *
+    * @param borrowContractAddress Address of BorrowContract
+    *
+    * @return Borrower address corresponding to the loan
+    *
+    **/
+    function getBorrowContractBorrower(address payable borrowContractAddress) public view returns (address) {
+        BorrowContract borrowContract = BorrowContract(borrowContractAddress);
+        return borrowContract.borrower();
+    }
+
+
+    /**
     * @dev Get the creator of the specified BorrowContract
     *
     * @param borrowContractAddress Address of BorrowContract
@@ -318,7 +360,7 @@ contract Manager {
     **/
     function getBorrowContractCreator(address payable borrowContractAddress) public view returns (address) {
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
-        return borrowContract.creditors();
+        return borrowContract.creator();
     }
 
 
@@ -337,24 +379,24 @@ contract Manager {
 
 
     /**
-    * @dev Get the current BTC price in Eth and update the variable
+    * @dev Get the current BTC price in Eth
     *
     * @return Current BTC/ETH price returned by oracle
     **/
-    function _getBtcInEtcPrice() private returns (uint) {
-        btcInEthPrice = uint(_oracle.getLatestBtcPriceInEth()); 
-        return btcInEthPrice / 1e18;
+    function _getBtcInEtcPrice() private view returns (uint) {
+        // The data returned from oracle is stored in 18 decimals
+        return uint(_oracle.getLatestBtcPriceInEth()) / 10**18; 
+
     }
 
 
     /**
-    * @dev Get the current 30-day ETH apr and update the variable
+    * @dev Get the current 30-day ETH apr
     *
     * @return Current 30-day ETH apr stored in 7 decimals returned by oracle
     **/
-    function _getEth30DayApr() private returns (uint) {
-        eth30DayApr = uint(_oracle.getLatestEth30DayApr());
-        return eth30DayApr;
+    function _getEth30DayApr() private view returns (uint) {
+        return uint(_oracle.getLatestEth30DayApr());
     }
 
 
@@ -363,33 +405,18 @@ contract Manager {
     *
     * @return Current 1-Day BTC interest rate benchmark curve stored in 8 decimals returned by oracle
     **/
-    function _getBtc1DayBaseRate() private returns (uint) {
-        btc1DayBaseRate = uint(_oracle.getBtc1DayBaseRate());
-        return btc1DayBaseRate;
+    function _getBtc1DayBaseRate() private view returns (uint) {
+        return uint(_oracle.getBtc1DayBaseRate());
     }
 
 
     /**
-    * @dev Calculate the collateral amount corresponding to the loan request
+    * @dev Get the current daily interest rate corresponding to the currency
     *
-    * @param loanAmount Amount of loan request
     * @param wantBTC Unit of loan request (is in BTC)
-    *
-    * @return Collateral amount of the loan request
+    * @return Current aily interest rate
     **/
-    function _calculateCollateralAmount(uint loanAmount, bool wantBTC) private returns (uint) {
-        // Get the latest BTC/ETH price
-        btcInEthPrice = _getBtcInEtcPrice();
-
-        if (wantBTC) {
-            return loanAmount * btcInEthPrice * collateralisationRate;
-        } else {
-            return loanAmount / btcInEthPrice * collateralisationRate;
-        }
-    }  
-
-
-    function _calculateInterest(uint _days, bool wantBTC) private returns (uint) {
+    function _getDailyInterestRate(bool wantBTC) private view returns (uint) {
         // Compute daily rate according to the data fed from oracle
         // For eth, apr is compounded monthly, so need to be divided by 30
         uint dailyRate;
@@ -402,33 +429,27 @@ contract Manager {
             // Data stored in 7 decimals
             dailyRate = (_getEth30DayApr()) / (30 * 100);
         }
+        return dailyRate;
+    }
 
-        // Compute compound interest according to the duration of loan (days)
-        // Base
-        uint compoundFactor = 10**7 + dailyRate;
-        // Exponentiation by squaring
-        // Start with 1 (1e7 in 7 decimals)
-        uint256 compoundInterest = 10**7; 
-        uint compoundExponent = _days;
-        while (compoundExponent > 0) {
-            // Odd exp: compoundInterest * compoundFactor (result * base)
-            if (compoundExponent % 2 == 1) {
-                compoundInterest = (compoundInterest * compoundFactor) / 10**7;
-            }
-            // Square base
-            compoundFactor = (compoundFactor * compoundFactor) / 10**7;
-            // Half the exponent (integer division)
-            compoundExponent /= 2;
+
+    /**
+    * @dev Calculate the collateral amount corresponding to the loan request,
+    *      including 1.5 overcollateralisation ratio
+    *
+    * @param loanAmount Amount of loan request
+    * @param wantBTC Unit of loan request (is in BTC)
+    * @param btcInEthPrice Currnet BTC price in ETH
+    *
+    * @return Collateral amount of the loan request
+    **/
+    function _calculateCollateralAmount(uint loanAmount, bool wantBTC, uint btcInEthPrice) private view returns (uint) {
+        if (wantBTC) {
+            return loanAmount * btcInEthPrice * COLLATERALISATIONRATE / 100;
+        } else {
+            return loanAmount / btcInEthPrice * COLLATERALISATIONRATE / 100;
         }
-        return compoundInterest;
-    }
-
-    function _calculateTotalRepaymentAmount(uint loanAmount, uint _days, bool wantBTC) private returns (uint) {
-        // Get compound interest stored in 7 decimals and convert to 
-        uint compoundInterest7Decimals = _calculateInterest(_days, wantBTC);
-        uint compoundInterest = compoundInterest7Decimals / 10**7;
-        return loanAmount * compoundInterest;
-    }
+    }  
 
 
     // Function to check if the user already has enough collateral for a loan
