@@ -34,13 +34,42 @@ contract BorrowContract {
     // True if contract has been activated, after collateral is deposited
     bool public activated;
 
+    // Loan term (Expected loan duration)
+    uint public loanTerm;
+
+    // Loan's activation time
+    uint public startTime;
+
+    // Contract's active duration in days
+    uint public loanDurationInDays;
+
+    // Total repayment amount
+    uint public totalRepaymentAmount;
+
+    // Repayment pending status, True if repayment request is accepted
+    bool public repaymentPendingStatus;
+
+    // Loan's deadline
+    uint public loanDeadline;
+
+    // ===========================================================================================================================================================
+    /** Events **/
+
+    // Event to be emitted when user successfully deposited required collateral
+    event CollateralDeposited(address indexed borrower, uint amount, bool wantBTC);
+
+    // Event to be emitted when the borrow contract is activated (after user deposited collateral)
+    event BorrowContractActivated(address borrowContract, uint startTime, uint remainingDays);
+
+    // Event to be emitted when the borrow contract is deactivated (after user repayed loan)
+    event BorrowContractDeactivated(address borrowContract);
+
+    // Event to be emitted when user cleared their repayment
+    event LoanRepayed(address indexed borrower, uint amount, bool wantBTC);
+
     // ===========================================================================================================================================================
 
-    event CollateralDeposited(address indexed borrower, uint amount, bool isETH);
-
-    // ===========================================================================================================================================================
-
-    constructor(address _borrower, IERC20 _wBtc, uint _borrowAmount, bool _wantBTC, uint _collateralAmount, uint _btcInEthPrice, uint _dailyInterestRate, bool _activated) {
+    constructor(address _borrower, IERC20 _wBtc, uint _borrowAmount, bool _wantBTC, uint _collateralAmount, uint _btcInEthPrice, uint _dailyInterestRate, bool _activated, uint _loanTerm) {
         borrower = _borrower;
         creator = msg.sender;
         wBtc = _wBtc;
@@ -50,6 +79,13 @@ contract BorrowContract {
         btcInEthPrice = _btcInEthPrice;
         dailyInterestRate = _dailyInterestRate;
         activated = _activated;
+        loanTerm = _loanTerm;
+        loanDeadline = _getLoanDeadline();
+
+        startTime = 0;
+        loanDurationInDays = 0;
+        totalRepaymentAmount = 0;
+        repaymentPendingStatus = false;
     }
 
 
@@ -57,17 +93,15 @@ contract BorrowContract {
     * @dev Desposit collateral (specified in the msg.value) in ETH to the receiver
     *
     * @param receiver Payable address of the receiver of the collateral
-    *
     **/
-    function depositCollateralETH(address receiver) public payable {
+    function depositCollateralETH(address receiver) external payable contractNotActivated {
         require((msg.value / 1 ether) == collateralAmount, "Incorrect ETH collateral amount");
 
-        // Transfer the collateral to the contract
+        // Transfer the collateral to the receiver's address
         (bool success, ) = payable(receiver).call{value: msg.value}("");
         require(success, "Transfer failed");
 
         emit CollateralDeposited(borrower, msg.value, wantBTC);
-        activated = true;
     }
 
 
@@ -76,19 +110,105 @@ contract BorrowContract {
     *
     * @param receiver Address of the receiver of the collateral
     * @param _wBtcCollateral Amount of collateral to be deposited
-    *
     **/
-    function depositCollateralBTC(address receiver, uint _wBtcCollateral) public {
-        require(_wBtcCollateral == collateralAmount, "Incorrect BTC collateral amount");
+    function depositCollateralBTC(address receiver, uint _wBtcCollateral) external contractNotActivated {
+        require(_wBtcCollateral == collateralAmount, "Incorrect WBTC collateral amount");
 
-        // Transfer the collateral from borrower's account to receiver's account
+        // Transfer the collateral from borrower's account to the receiver's account
         require(wBtc.transferFrom(borrower, receiver, collateralAmount), "WBTC transfer failed");
         emit CollateralDeposited(borrower, _wBtcCollateral, wantBTC);
-        activated = true;
     }
 
 
-       /**
+    /**
+    * @dev Activate contract and start timer, 
+    *      which can only be invoked by the manager contract
+    **/
+    function activateContract() external restricted contractNotActivated{
+        activated = true;
+        startTime = block.timestamp;
+        emit BorrowContractActivated(address(this), startTime, getRemainingDays());
+    }
+
+
+    /**
+    * @dev Deactivate contract
+    *      which can only be invoked by the manager contract
+    *
+    **/
+    function deactivateContract() external contractActivated restricted {
+        require(msg.sender == creator);
+        activated = false;
+        emit BorrowContractDeactivated(address(this));
+    }
+
+
+    /**
+    * @dev Allow users to request for repayment when they are ready
+    *
+    * @param balance User current account balance
+    **/
+    function requestRepayment(uint balance) external contractActivated returns (uint) {
+        // Stop the timer and compute loan duration in days
+        loanDurationInDays = (block.timestamp - startTime) / 1 days;
+
+        // Get the total repayment for the loan duration and check if the balance is sufficient
+        uint repaymentAmount = _calculateTotalRepaymentAmount(borrowAmount, loanDurationInDays);
+        if (balance >= repaymentAmount) {
+            repaymentPendingStatus = true;
+        }
+        return repaymentAmount;
+    }
+
+
+    /**
+    * @dev Transfer repayment amount in BTC from the borrower's account to the receiver's account
+    *
+    * @param receiver Address of the receiver of the repayment
+    **/
+    function repayLoanETH(address receiver) external contractActivated payable {
+        require((msg.value / 1 ether) == totalRepaymentAmount, "Incorrect ETH repayment amount");
+
+        // Transfer repayment ETH amount to the receiver's contract
+        (bool success, ) = payable(receiver).call{value: msg.value}("");
+        require(success, "Transfer failed");
+
+        emit LoanRepayed(borrower, msg.value, wantBTC);
+    }
+
+
+    /**
+    * @dev Transfer repayment amount in BTC from the borrower's account to the receiver's account
+    *
+    * @param receiver Address of the receiver of the collateral
+    * @param _wBtcRepayment Amount of repayment to be transferred
+    **/
+    function repayLoanBTC(address receiver, uint _wBtcRepayment) external contractActivated {
+        require(_wBtcRepayment == collateralAmount, "Incorrect WBTC repayment amount");
+
+        // Transfer the WBTC repayment amount from borrower's account to the receiver's account
+        require(wBtc.transferFrom(borrower, receiver, collateralAmount), "WBTC transfer failed");
+        emit LoanRepayed(borrower, _wBtcRepayment, wantBTC);
+    }
+
+
+    /**
+    * @dev Get remaining number of days until the loan's deadline
+    *
+    * return Remaining days
+    **/
+    function getRemainingDays() public view contractActivated returns (uint) {
+        if (block.timestamp >= loanDeadline) {
+            return 0;
+        } else {
+            return (loanDeadline - startTime) / 1 days;
+        }
+    }
+
+
+    // ===========================================================================================================================================================
+
+    /**
     * @dev Calculate compound interest following formula: (1 + daily rate) ** day, 
     *      taking into account the loan duration in days, and daily interest rate
     *
@@ -97,7 +217,7 @@ contract BorrowContract {
     *
     * @return Compund interest stored in 7 decimals
     **/
-    function _calculateInterest(uint _days, uint dailyRate) private pure returns (uint) {
+    function _calculateInterest(uint _days, uint dailyRate) private view contractActivated returns (uint) {
         // Compute compound interest according to the duration of loan (days)
         // Base
         uint compoundFactor = 10**7 + dailyRate;
@@ -126,11 +246,51 @@ contract BorrowContract {
     * @param loanAmount Amount of loan request
     * @param _days Loan duration in days
     *
-    * @return Total repayment amount required for the loan request stored in 7 decimals
+    * @return Total repayment amount required for the loan request
     **/
-    function _calculateTotalRepaymentAmount(uint loanAmount, uint _days) private view returns (uint) {
+    function _calculateTotalRepaymentAmount(uint loanAmount, uint _days) private view contractActivated returns (uint) {
         // Get compound interest stored in 7 decimals
         uint compoundInterest7Decimals = _calculateInterest(_days, dailyInterestRate);
-        return loanAmount * compoundInterest7Decimals;
+        return (loanAmount * compoundInterest7Decimals) / 10**7 + loanAmount;
+    }
+
+
+    /**
+    * @dev Get loan deadline after contract is activated
+    *
+    * @return Loan deadline in days
+    **/
+    function _getLoanDeadline() private view contractActivated returns (uint) {
+        return startTime + (loanDurationInDays * 1 days);
+    }
+
+
+    /** 
+     * @notice Only when the contract is activated
+     */
+    modifier contractActivated() {
+        require(activated, "Can only be executed when the contract is activated");
+        _;
+    }
+
+
+    /** 
+     * @notice Only when the contract is not yet activated
+     */
+    modifier contractNotActivated() {
+        require(!activated, "Can only be executed when the contract is not activated");
+        _;
+    }
+
+
+    /** 
+     * @notice Only the creator can do
+     */
+    modifier restricted() {
+        require(msg.sender == creator, "Can only be executed by the contract creator");
+        _;
     }
 }
+
+// grace period 5-7 days
+// reminder 
