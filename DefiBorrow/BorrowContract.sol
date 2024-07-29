@@ -291,6 +291,3 @@ contract BorrowContract {
         _;
     }
 }
-
-// grace period 5-7 days
-// reminder 

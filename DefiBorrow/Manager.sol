@@ -10,7 +10,7 @@ import "./Oracle_.sol";
 
 /// @title Contract to manage the whole lending pool and all lending and borrowing activities
 
-/// TODO: liquidation, off chain data storage
+/// TODO: liquidation (grace period, reminder), off chain data storage
 
 contract Manager {
     // Struct to store user available balance for withdrawal (For a specific user, how much ETH and wBTC they have for withdrawal)
@@ -169,9 +169,6 @@ contract Manager {
 
         // Activate the borrow contract
         borrowContract.activateContract();
-
-        // Release fund to the user available balance in the pool
-        releaseFund(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC());
     }
 
 
@@ -203,9 +200,6 @@ contract Manager {
 
         // Activate the borrow contract
         borrowContract.activateContract();
-
-        // Release fund to the user available balance in the pool
-        releaseFund(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC());
     }
 
 
@@ -258,9 +252,6 @@ contract Manager {
 
         // Deactivate the borrow contract
         borrowContract.deactivateContract();
-
-        // Release collateral to the user available balance in the pool
-        releaseCollateral(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC());
     }
 
 
@@ -290,9 +281,6 @@ contract Manager {
 
         // Deactivate the borrow contract
         borrowContract.deactivateContract();
-
-        // Release collateral to the user available balance in the pool
-        releaseCollateral(borrowContractAddress, borrowContract.borrowAmount(), borrowContract.wantBTC());
     }
 
 
@@ -696,7 +684,7 @@ contract Manager {
     * @param amount Amount of the fund released by the manager contract
     * @param wantBTC Unit of loan request (is in BTC)
     **/
-    function _addUserBalance(address user, uint amount, bool wantBTC) private restricted {
+    function _addUserBalance(address user, uint amount, bool wantBTC) private {
         // If user collateral record exists, update the record
         // Otherwise, create a new user record in the pool
         UserAvailableBalance memory b;
@@ -727,7 +715,7 @@ contract Manager {
     * @param amount Amount of the fund withdrawn by the user
     * @param wantBTC Unit of loan request (is in BTC)
     **/
-    function _deductUserBalance(address user, uint amount, bool wantBTC) private restricted {
+    function _deductUserBalance(address user, uint amount, bool wantBTC) private {
         // If user collateral record exists, update the record
         // Otherwise, create a new user record in the pool
         UserAvailableBalance memory b;
