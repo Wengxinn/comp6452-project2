@@ -424,7 +424,7 @@ contract Manager {
 
         // Borrow contract will be deactivated and the repayment pending status will be true when repayment is done
         require(!borrowContract.activated() && borrowContract.repaymentPendingStatus(), "Repayment amount has not been cleared");
-        _deductUserBalance(borrowContract.borrower(), amount, wantBTC);
+        _addUserBalance(borrowContract.borrower(), amount, wantBTC);
     }
 
 
