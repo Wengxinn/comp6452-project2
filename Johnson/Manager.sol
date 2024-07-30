@@ -63,12 +63,6 @@ contract Manager {
     approveWBTC(1000000000000000000000000);
   }
 
-  function setWBTCAddress(address _wBtc) public {
-    require(msg.sender == owner, "Only owner can set WBTC address");
-    wBtc = IERC20(_wBtc);
-  }
-
-
   // Function to get the current exchange rate
   function _getExchangeRate() public view returns (uint) {
     return exchangeRate;
@@ -90,23 +84,6 @@ contract Manager {
   }
 
 
-  // Function to check if the user already has enough collateral for a loan
-  // function _checkEnoughCollateral(address user, uint collateralAmount, bool wantBTC) private view returns (bool) {
-  //   // If user collateral record doesn't exist, return false
-  //   // If exist, check if the corresponding collateral amount is sufficient for the loan
-  //   if (!_collateralExists[user]) {
-  //       return false;
-  //   } else {
-  //       UserCollateral memory c = collaterals[user];
-  //       if (wantBTC) {
-  //           return (c.wBtcAmount >= collateralAmount);
-  //       } else {
-  //           return (c.ethAmount >= collateralAmount);
-  //       }
-  //   }
-  // }
-
-
   // Function to deploy a new BorrowContract, but not yet set the collateral
   // When the new borrow contract is initialized, the function will return the address of the new BorrowContract
   // And the caller can call the depositCollateral function to set the collateral
@@ -125,10 +102,6 @@ contract Manager {
 
       // Calculate collateral amount required
       uint collateralAmount = _calculateCollateralAmount(brorowAmount, wantBTC, currentExchangeRate);
-
-      // Check borrower's held collateral (if any)
-      // If borrower has sufficient collateral, accept the request straightaway
-      // bool sufficientCollateral = _checkEnoughCollateral(msg.sender, collateralAmount, wantBTC);
       
       // Create new loan instance
       BorrowContract newBorrowContract = new BorrowContract(msg.sender, wBtc, brorowAmount, wantBTC, collateralAmount, currentExchangeRate, false);

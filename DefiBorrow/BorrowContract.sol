@@ -153,11 +153,12 @@ contract BorrowContract {
         loanDurationInDays = (block.timestamp - startTime) / 1 days;
 
         // Get the total repayment for the loan duration and check if the balance is sufficient
-        uint repaymentAmount = _calculateTotalRepaymentAmount(borrowAmount, loanDurationInDays);
-        if (balance >= repaymentAmount) {
+        totalRepaymentAmount = _calculateTotalRepaymentAmount(borrowAmount, loanDurationInDays);
+        if (balance >= totalRepaymentAmount) {
             repaymentPendingStatus = true;
+            
         }
-        return repaymentAmount;
+        return totalRepaymentAmount;
     }
 
 
@@ -260,7 +261,7 @@ contract BorrowContract {
     *
     * @return Loan deadline in days
     **/
-    function _getLoanDeadline() private view contractActivated returns (uint) {
+    function _getLoanDeadline() private view returns (uint) {
         return startTime + (loanDurationInDays * 1 days);
     }
 

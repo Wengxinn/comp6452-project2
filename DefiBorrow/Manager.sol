@@ -270,10 +270,10 @@ contract Manager {
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
         require(borrowContract.repaymentPendingStatus(), "Repayment request not yet initiated");
         require(amount == totalRepaymentAmount, "Incorrect BTC amount");
-        require(checkEthBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
+        require(checkWBTCBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
 
         // Transfer BTC to the Manager contract
-        if (!borrowContract.wantBTC()) {
+        if (borrowContract.wantBTC()) {
             borrowContract.repayLoanBTC(address(this), amount);
         } else {
             revert("This BorrowContract does not support ETH repayment");
@@ -298,10 +298,13 @@ contract Manager {
         UserAvailableBalance memory userBalances = availableBalances[user];
         if (wantBTC) {
             require(msg.value <= userBalances.wBtcAmount, "Insufficient funds in WBTC for withdrawal");
-            fundWBTC(user, msg.value);
+            // fundWBTC(user, msg.value);
+            // Transfer wBTC to the user from the owner
+            require(wBtc.transfer(user, msg.value), "WBTC transfer failed");
         } else {
             require(msg.value <= userBalances.ethAmount, "Insufficient funds in ETH for withdrawal");
-            fundEth(user, msg.value);
+            // fundEth(user, msg.value);
+            user.transfer(msg.value);
         }
         // Deduct user available balance in the pool
         _deductUserBalance(user, msg.value, wantBTC);
