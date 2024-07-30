@@ -188,7 +188,7 @@ contract BorrowContract {
         require(_wBtcRepayment == totalRepaymentAmount, "Incorrect WBTC repayment amount");
 
         // Transfer the WBTC repayment amount from borrower's account to the receiver's account
-        require(wBtc.transferFrom(borrower, receiver, collateralAmount), "WBTC transfer failed");
+        require(wBtc.transferFrom(borrower, receiver, _wBtcRepayment), "WBTC transfer failed");
         emit LoanRepayed(borrower, _wBtcRepayment, wantBTC);
     }
 

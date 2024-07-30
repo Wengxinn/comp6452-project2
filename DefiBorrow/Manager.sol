@@ -240,12 +240,11 @@ contract Manager {
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
         require(msg.sender == borrowContract.borrower(), "Only borrower can repay loan");
         require(borrowContract.repaymentPendingStatus(), "Repayment request pending");
-        require(msg.value == totalRepaymentAmount, "Incorrect ETH amount");
         require(checkEthBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
 
         // User transfers ETH to the Manager contract
         if (!borrowContract.wantBTC()) {
-            borrowContract.repayLoanETH{value: msg.value}(address(this));
+            borrowContract.repayLoanETH{value: totalRepaymentAmount}(address(this));
         } else {
             revert("This BorrowContract does not support WBTC repayment");
         }
@@ -260,7 +259,7 @@ contract Manager {
     *
     * @param borrowContractAddress Address of BorrowContract
     **/
-    function repayLoanBTC(address payable borrowContractAddress, uint amount) public {
+    function repayLoanBTC(address payable borrowContractAddress) public {
         // Check if the BorrowContract exists
         require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
@@ -269,12 +268,11 @@ contract Manager {
         // Check borrower's condition to repay loan
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
         require(borrowContract.repaymentPendingStatus(), "Repayment request not yet initiated");
-        require(amount == totalRepaymentAmount, "Incorrect BTC amount");
         require(checkWBTCBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
 
         // Transfer BTC to the Manager contract
         if (borrowContract.wantBTC()) {
-            borrowContract.repayLoanBTC(address(this), amount);
+            borrowContract.repayLoanBTC(address(this), totalRepaymentAmount);
         } else {
             revert("This BorrowContract does not support ETH repayment");
         }
@@ -290,25 +288,26 @@ contract Manager {
     * @param user Address of user
     * @param wantBTC Unit of loan request (is in BTC)
     **/
-    function withdrawFunds(address payable user, bool wantBTC) public payable{
+    function withdrawFunds(address payable user, uint amount, bool wantBTC) public payable{
         // Check if user's available balance exists
         require(_availableBalanceExists[user], "User's available balance does not exist");
-        
+        require(user == msg.sender, "Only user corresponding to the available balance can withdraw funds");
+
         // Check if there are sufficient funds for user withdrawal in the pool
         UserAvailableBalance memory userBalances = availableBalances[user];
         if (wantBTC) {
-            require(msg.value <= userBalances.wBtcAmount, "Insufficient funds in WBTC for withdrawal");
+            require(amount <= userBalances.wBtcAmount, "Insufficient funds in WBTC for withdrawal");
             // fundWBTC(user, msg.value);
             // Transfer wBTC to the user from the owner
-            require(wBtc.transfer(user, msg.value), "WBTC transfer failed");
+            require(wBtc.transfer(user, amount), "WBTC transfer failed");
         } else {
-            require(msg.value <= userBalances.ethAmount, "Insufficient funds in ETH for withdrawal");
+            require(amount <= userBalances.ethAmount, "Insufficient funds in ETH for withdrawal");
             // fundEth(user, msg.value);
-            user.transfer(msg.value);
+            user.transfer(amount * 1 ether);
         }
         // Deduct user available balance in the pool
-        _deductUserBalance(user, msg.value, wantBTC);
-        emit FundWithdrawn(user, msg.value, wantBTC);
+        _deductUserBalance(user, amount, wantBTC);
+        emit FundWithdrawn(user, amount, wantBTC);
     }
 
 
@@ -367,7 +366,7 @@ contract Manager {
     * @param user Address of user
     * @param amount Funded amount of WBTC
     **/
-    function fundWBTC(address user, uint amount) public {
+    function fundWBTC(address user, uint amount) public restricted {
         require(amount > 0, "Amount must be greater than 0");
 
         // Check if the contract has enough wBTC to transfer
@@ -386,7 +385,7 @@ contract Manager {
     * @param user Address of user
     * @param amount Funded amount of ETH
     **/
-    function fundEth(address payable user, uint amount) public payable {
+    function fundEth(address payable user, uint amount) public restricted payable {
         // Convert to wei
         amount *= 1 ether;
         // Check if the contract has enough ETH to transfer
@@ -402,16 +401,14 @@ contract Manager {
     *      but the fund has not yet been transferred to user account
     *
     * @param borrowContractAddress Address of BorrowContract
-    * @param amount Amount of released fund
-    * @param wantBTC Unit of loan request (is in BTC)
     **/
-    function releaseFund(address borrowContractAddress, uint amount, bool wantBTC) public restricted {
+    function releaseFund(address borrowContractAddress) public restricted {
         // Check if the BorrowContract exists
         require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
 
         require(borrowContract.activated(), "Contract has not been activated");
-        _addUserBalance(borrowContract.borrower(), amount, wantBTC);
+        _addUserBalance(borrowContract.borrower(), borrowContract.borrowAmount(), borrowContract.wantBTC());
     }
 
 
@@ -420,17 +417,15 @@ contract Manager {
     *      but the fund has not yet been transferred to user account
     *
     * @param borrowContractAddress Address of BorrowContract
-    * @param amount Amount of released fund
-    * @param wantBTC Unit of loan request (is in BTC)
     **/
-    function releaseCollateral(address borrowContractAddress, uint amount, bool wantBTC) public restricted {
+    function releaseCollateral(address borrowContractAddress) public restricted {
         // Check if the BorrowContract exists
         require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
 
         // Borrow contract will be deactivated and the repayment pending status will be true when repayment is done
         require(!borrowContract.activated() && borrowContract.repaymentPendingStatus(), "Repayment amount has not been cleared");
-        _addUserBalance(borrowContract.borrower(), amount, wantBTC);
+        _addUserBalance(borrowContract.borrower(), borrowContract.collateralAmount(), !borrowContract.wantBTC());
     }
 
 
