@@ -367,7 +367,7 @@ contract Manager {
     * @param user Address of user
     * @param amount Funded amount of WBTC
     **/
-    function fundWBTC(address user, uint amount) public restricted {
+    function fundWBTC(address user, uint amount) public {
         require(amount > 0, "Amount must be greater than 0");
 
         // Check if the contract has enough wBTC to transfer
@@ -386,11 +386,14 @@ contract Manager {
     * @param user Address of user
     * @param amount Funded amount of ETH
     **/
-    function fundEth(address payable user, uint amount) public restricted payable {
+    function fundEth(address payable user, uint amount) public payable {
+        // Convert to wei
+        amount *= 1 ether;
         // Check if the contract has enough ETH to transfer
         uint contractBalance = checkEthBalance(address(this));
         require(contractBalance >= amount, "Contract does not have enough ETH");
-        user.transfer(amount);
+        (bool success, ) = user.call{value: amount}("");
+        require(success, "ETH transfer failed");
     }
 
 

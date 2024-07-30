@@ -1,0 +1,1086 @@
+{
+	"compiler": {
+		"version": "0.8.26+commit.8a97fa7a"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "BorrowContractAddress",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "borrowAmount",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "activated",
+						"type": "bool"
+					}
+				],
+				"name": "BorrowContractInitialized",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					}
+				],
+				"name": "FundWithdrawn",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "BorrowContractAddress",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "totalRepaymentAmount",
+						"type": "uint256"
+					},
+					{
+						"indexed": false,
+						"internalType": "bool",
+						"name": "repaymentPendingStatus",
+						"type": "bool"
+					}
+				],
+				"name": "LoanRepaymentRequested",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "COLLATERALISATIONRATE",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "availableBalances",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "ethAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "wBtcAmount",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_owner",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_spender",
+						"type": "address"
+					}
+				],
+				"name": "checkAllowance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "checkEthBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "checkWBTCBalance",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "borrowAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "loanTerm",
+						"type": "uint256"
+					}
+				],
+				"name": "deployBorrowContract",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "depositCollateralBTC",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "depositCollateralETH",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "fundEth",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "fundWBTC",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractBorrowAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractBorrower",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractBtcInEthPrice",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractCollateralAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractCreator",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractDailyInterestRate",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractLoanDeadline",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractLoanTerm",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractRepaymentPendingStatus",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractStartTime",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractStatus",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractTotalRepaymentAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "getBorrowContractWantBTC",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "loans",
+				"outputs": [
+					{
+						"internalType": "contract BorrowContract",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "borrowContractAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					}
+				],
+				"name": "releaseCollateral",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "borrowContractAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					}
+				],
+				"name": "releaseFund",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "repayLoanBTC",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "repayLoanETH",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "borrowContractAddress",
+						"type": "address"
+					}
+				],
+				"name": "requestRepayment",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_wBtc",
+						"type": "address"
+					}
+				],
+				"name": "setWBTCAddress",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "totalLoans",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "wBtc",
+				"outputs": [
+					{
+						"internalType": "contract IERC20",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "wBtcAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address payable",
+						"name": "user",
+						"type": "address"
+					},
+					{
+						"internalType": "bool",
+						"name": "wantBTC",
+						"type": "bool"
+					}
+				],
+				"name": "withdrawFunds",
+				"outputs": [],
+				"stateMutability": "payable",
+				"type": "function"
+			},
+			{
+				"stateMutability": "payable",
+				"type": "receive"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"checkAllowance(address,address)": {
+					"details": "Check how much remaining of the spender's WBTC allowance",
+					"returns": {
+						"_0": "Spender's remaining allowance over the owner*"
+					}
+				},
+				"checkEthBalance(address)": {
+					"details": "Check user's current ETH balance",
+					"params": {
+						"user": "Address of user"
+					},
+					"returns": {
+						"_0": "Current ETH balance corresponding to the user account*"
+					}
+				},
+				"checkWBTCBalance(address)": {
+					"details": "Check user's current WBTC balance",
+					"params": {
+						"user": "Address of user"
+					},
+					"returns": {
+						"_0": "Current WBTC balance corresponding to the user account*"
+					}
+				},
+				"deployBorrowContract(uint256,bool,uint256)": {
+					"details": "Deploy a new BorrowContract instance when a new loan request is initiated,       where the required collateral has not been deposited,       and therefore not yet activated",
+					"params": {
+						"borrowAmount": "Amount of loan request",
+						"wantBTC": "Unit of loan request (is in BTC)"
+					},
+					"returns": {
+						"_0": "Address of new BorrowContract*"
+					}
+				},
+				"depositCollateralBTC(address,uint256)": {
+					"details": "Allow borrower to deposit collateral in BTC to the specified BorrowContract",
+					"params": {
+						"amount": "Amount of WBTC to be deposited to the BorrowContract as collateral*",
+						"borrowContractAddress": "Address of BorrowContract"
+					}
+				},
+				"depositCollateralETH(address)": {
+					"details": "Allow borrower to deposit collateral in ETH to the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract*"
+					}
+				},
+				"fundEth(address,uint256)": {
+					"details": "Fund the user with a specific amount of ETH,       which can only invoked by the contract owner",
+					"params": {
+						"amount": "Funded amount of ETH*",
+						"user": "Address of user"
+					}
+				},
+				"fundWBTC(address,uint256)": {
+					"details": "Fund the user with a specific amount of WBTC,       which can only invoked by the contract owner",
+					"params": {
+						"amount": "Funded amount of WBTC*",
+						"user": "Address of user"
+					}
+				},
+				"getBorrowContractBorrowAmount(address)": {
+					"details": "Get the borrow amount of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Borrow amount corresponding to the loan*"
+					}
+				},
+				"getBorrowContractBorrower(address)": {
+					"details": "Get the borrower address of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Borrower address corresponding to the loan*"
+					}
+				},
+				"getBorrowContractBtcInEthPrice(address)": {
+					"details": "Get the current BTC price in ETH of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Current BTC price in ETH*"
+					}
+				},
+				"getBorrowContractCollateralAmount(address)": {
+					"details": "Get the collateral amount of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Collateral amount corresponding to the loan*"
+					}
+				},
+				"getBorrowContractCreator(address)": {
+					"details": "Get the creator of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Contract's creator*"
+					}
+				},
+				"getBorrowContractDailyInterestRate(address)": {
+					"details": "Get the daily interest rate of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Daily interest rate corresponding to the loan*"
+					}
+				},
+				"getBorrowContractLoanDeadline(address)": {
+					"details": "Get loan deadline of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Deadline of repayment corresponding to the loan*"
+					}
+				},
+				"getBorrowContractLoanTerm(address)": {
+					"details": "Get the loan term of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Loan term attached to the BorrowContract*"
+					}
+				},
+				"getBorrowContractRepaymentPendingStatus(address)": {
+					"details": "Get current repayment pending status of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Current repayment pending status corresponding to the loan*"
+					}
+				},
+				"getBorrowContractStartTime(address)": {
+					"details": "Get activation time of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Contract's activated time*"
+					}
+				},
+				"getBorrowContractStatus(address)": {
+					"details": "Get the current status (is activated) of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Contract's activation status*"
+					}
+				},
+				"getBorrowContractTotalRepaymentAmount(address)": {
+					"details": "Get total repayment amount of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Total repayment amount corresponding to the loan*"
+					}
+				},
+				"getBorrowContractWantBTC(address)": {
+					"details": "Get the currency (BTC or ETH) of the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract"
+					},
+					"returns": {
+						"_0": "Currency of the loan (is in BTC)*"
+					}
+				},
+				"releaseCollateral(address,uint256,bool)": {
+					"details": "Release collateral to user available balance stored in the pool,       but the fund has not yet been transferred to user account",
+					"params": {
+						"amount": "Amount of released fund",
+						"borrowContractAddress": "Address of BorrowContract",
+						"wantBTC": "Unit of loan request (is in BTC)*"
+					}
+				},
+				"releaseFund(address,uint256,bool)": {
+					"details": "Release fund to user available balance stored in the pool,       but the fund has not yet been transferred to user account",
+					"params": {
+						"amount": "Amount of released fund",
+						"borrowContractAddress": "Address of BorrowContract",
+						"wantBTC": "Unit of loan request (is in BTC)*"
+					}
+				},
+				"repayLoanBTC(address,uint256)": {
+					"details": "Allow borrower to repay loan in BTC to the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract*"
+					}
+				},
+				"repayLoanETH(address)": {
+					"details": "Allow borrower to repay loan in ETH to the specified BorrowContract",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract*"
+					}
+				},
+				"requestRepayment(address)": {
+					"details": "Allow borrower to request repayment of their loan when they are ready",
+					"params": {
+						"borrowContractAddress": "Address of BorrowContract*"
+					}
+				},
+				"setWBTCAddress(address)": {
+					"details": "Set WBTC address,       which can only be invoked by the contract owner.",
+					"params": {
+						"_wBtc": "Address of wrapped Bitcoin*"
+					}
+				},
+				"withdrawFunds(address,bool)": {
+					"details": "Allow user to withdraw available funds stored in the pool",
+					"params": {
+						"user": "Address of user",
+						"wantBTC": "Unit of loan request (is in BTC)*"
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"BorrowContractInitialized(address,uint256,bool,bool)": {
+					"notice": "Events *"
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"constructor": {
+					"notice": "Constructor and user-interacted functions *"
+				}
+			},
+			"notice": "TODO: liquidation (grace period, reminder), off chain data storage",
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"DefiBorrow/Manager.sol": "Manager"
+		},
+		"evmVersion": "cancun",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol": {
+			"keccak256": "0xfe4e8bb4861bb3860ba890ab91a3b818ec66e5a8f544fb608cfcb73f433472cd",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://644cff84052e1e82b5bb502b2a46e8f142a62b0db4cd9b38200798ba8373c6f7",
+				"dweb:/ipfs/QmTa99QHrJBn3SXDizquPBUiTxVCNKQrHgaWJhuds5Sce2"
+			]
+		},
+		"@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
+			"keccak256": "0x60c65f701957fdd6faea1acb0bb45825791d473693ed9ecb34726fdfaa849dd7",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://ea290300e0efc4d901244949dc4d877fd46e6c5e43dc2b26620e8efab3ab803f",
+				"dweb:/ipfs/QmcLLJppxKeJWqHxE2CUkcfhuRTgHSn8J4kijcLa5MYhSt"
+			]
+		},
+		"@openzeppelin/contracts/token/ERC20/ERC20.sol": {
+			"keccak256": "0xc3e1fa9d1987f8d349dfb4d6fe93bf2ca014b52ba335cfac30bfe71e357e6f80",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://c5703ccdeb7b1d685e375ed719117e9edf2ab4bc544f24f23b0d50ec82257229",
+				"dweb:/ipfs/QmTdwkbQq7owpCiyuzE7eh5LrD2ddrBCZ5WHVsWPi1RrTS"
+			]
+		},
+		"@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+			"keccak256": "0xc6a8ff0ea489379b61faa647490411b80102578440ab9d84e9a957cc12164e70",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0ea104e577e63faea3b69c415637e99e755dcbf64c5833d7140c35a714d6d90c",
+				"dweb:/ipfs/Qmau6x4Ns9XdyynRCNNp3RhLqijJjFm7z5fyZazfYFGYdq"
+			]
+		},
+		"@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
+			"keccak256": "0xaa761817f6cd7892fcf158b3c776b34551cde36f48ff9703d53898bc45a94ea2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://0ad7c8d4d08938c8dfc43d75a148863fb324b80cf53e0a36f7e5a4ac29008850",
+				"dweb:/ipfs/QmcrhfPgVNf5mkdhQvy1pMv51TFokD3Y4Wa5WZhFqVh8UV"
+			]
+		},
+		"@openzeppelin/contracts/utils/Context.sol": {
+			"keccak256": "0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://6a708e8a5bdb1011c2c381c9a5cfd8a9a956d7d0a9dc1bd8bcdaf52f76ef2f12",
+				"dweb:/ipfs/Qmax9WHBnVsZP46ZxEMNRQpLQnrdE4dK8LehML1Py8FowF"
+			]
+		},
+		"DefiBorrow/BorrowContract.sol": {
+			"keccak256": "0xe217ff1ce0bd71567e87545a5c9f3a733c64797509f100f34119a1e732a36e12",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://1c0376b450acd3169225184d636e10109866dacf10b1a4face7674deb4f47397",
+				"dweb:/ipfs/QmSJewG5FPgJictqG7oGUgVnEvT58GYRTtFZt6QXc696S2"
+			]
+		},
+		"DefiBorrow/Manager.sol": {
+			"keccak256": "0x71245f5943461a5cd500cb0ace83daf073678c3906cb0bb6a34a8da5f9eb7f59",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://e1a8f13d578d6f889bc8f1ad7ac6d0d177cf62e1ae7c9927ec4ce57e1ed50379",
+				"dweb:/ipfs/QmRaCjqFMf4ZWP1NhE46bxDRek9w7YYa85LBDdaB6b9oo5"
+			]
+		},
+		"DefiBorrow/Oracle.sol": {
+			"keccak256": "0x9185abb8477144a77162197f4c43cb4d6e3413c61957263ced0cf227136613ed",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://7e612eb75c91ed6210cc8f0c292aaaad40f601b4d019a22ddb6b46d89caa3ceb",
+				"dweb:/ipfs/QmWUhYcyvmXHv4Rwkr3YgDF6TFLoFFowTK6C7AT9qpkPyg"
+			]
+		},
+		"DefiBorrow/Oracle_.sol": {
+			"keccak256": "0x6ffc43470dd1919e8f392b8556966aace72904b6eb8ff17fe24c6b4c6c5a8c08",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://8a845d762b78fee2182b1ac8fbf53091a4c1341c43da99958a50b2b029bdb130",
+				"dweb:/ipfs/QmVSt4UmeGLKqTbnVGKwg5rWod4vjYi5gCj7w28UcHfKuV"
+			]
+		},
+		"DefiBorrow/WBTC.sol": {
+			"keccak256": "0x8a2262b290fdf048f57a82d10f0aaac7e7280e80239364fb227f99c022deb9ac",
+			"license": "MIT",
+			"urls": [
+				"bzz-raw://e94f850d373b87ee97ddf5dc47072f3db78412fb0e338ede22a6504389f1336d",
+				"dweb:/ipfs/QmNuNaNqhT8mHpWo8frvSbobkZ1c2mhs3W9FJPWkMFrGWt"
+			]
+		}
+	},
+	"version": 1
+}

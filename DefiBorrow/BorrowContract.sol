@@ -80,7 +80,6 @@ contract BorrowContract {
         dailyInterestRate = _dailyInterestRate;
         activated = _activated;
         loanTerm = _loanTerm;
-        loanDeadline = _getLoanDeadline();
 
         startTime = 0;
         loanDurationInDays = 0;
@@ -127,6 +126,7 @@ contract BorrowContract {
     function activateContract() external restricted contractNotActivated{
         activated = true;
         startTime = block.timestamp;
+        loanDeadline = _getLoanDeadline();
         emit BorrowContractActivated(address(this), startTime, getRemainingDays());
     }
 
@@ -185,7 +185,7 @@ contract BorrowContract {
     * @param _wBtcRepayment Amount of repayment to be transferred
     **/
     function repayLoanBTC(address receiver, uint _wBtcRepayment) external contractActivated {
-        require(_wBtcRepayment == collateralAmount, "Incorrect WBTC repayment amount");
+        require(_wBtcRepayment == totalRepaymentAmount, "Incorrect WBTC repayment amount");
 
         // Transfer the WBTC repayment amount from borrower's account to the receiver's account
         require(wBtc.transferFrom(borrower, receiver, collateralAmount), "WBTC transfer failed");
@@ -262,7 +262,7 @@ contract BorrowContract {
     * @return Loan deadline in days
     **/
     function _getLoanDeadline() private view returns (uint) {
-        return startTime + (loanDurationInDays * 1 days);
+        return startTime + (loanTerm * 1 days);
     }
 
 

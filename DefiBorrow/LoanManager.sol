@@ -196,4 +196,20 @@ contract LoanManager {
         require(msg.sender == manager, "Restricted to manager only");
         _;
     }
+
+    // // Function to check if the user already has enough collateral for a loan
+    // function _checkEnoughCollateral(address user, uint collateralAmount, bool wantBTC) private view returns (bool) {
+    //   // If user collateral record doesn't exist, return false
+    //   // If exist, check if the corresponding collateral amount is sufficient for the loan
+    //   if (!_collateralExists[user]) {
+    //       return false;
+    //   } else {
+    //       UserCollateral memory c = collaterals[user];
+    //       if (wantBTC) {
+    //           return (c.wBtcAmount >= collateralAmount);
+    //       } else {
+    //           return (c.ethAmount >= collateralAmount);
+    //       }
+    //   }
+    // }
 }
