@@ -61,6 +61,8 @@ contract Manager {
 
     // Event to be emitted when user successfully withdraw a fund from the smart contract
     event FundWithdrawn(address user, uint amount, bool wantBTC);
+    
+    event debug(uint sentValue, uint collateralAmount, uint userBalance);
 
     // ===========================================================================================================================================================
     /** Constructor and user-interacted functions **/
@@ -158,7 +160,7 @@ contract Manager {
         // Check borrower's condition to deposit collateral
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit collateral");
         require(msg.value == collateralAmount, "Incorrect ETH amount");
-        require(checkEthBalance((msg.sender)) >= collateralAmount, "Insufficient balance");
+        // require(checkEthBalance(msg.sender) >= collateralAmount, "Insufficient balance");
 
         // User transfers ETH to the Manager contract
         if (borrowContract.wantBTC()) {
@@ -189,7 +191,7 @@ contract Manager {
         // Check borrower's condition to deposit collateral
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit collateral");
         require(amount == collateralAmount, "Incorrect WBTC amount");
-        require((checkWBTCBalance(msg.sender)) >= collateralAmount, "Insufficient balance");
+        require((checkWBTCBalance(msg.sender)) >= amount, "Insufficient balance");
 
         // User transfers WBTC to the Manager contract
         if (!borrowContract.wantBTC()) {
@@ -240,11 +242,12 @@ contract Manager {
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
         require(msg.sender == borrowContract.borrower(), "Only borrower can repay loan");
         require(borrowContract.repaymentPendingStatus(), "Repayment request pending");
-        require(checkEthBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
+        require(msg.value == totalRepaymentAmount * 1 ether, "Incorrect ETH amount");
+        // require(checkEthBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
 
         // User transfers ETH to the Manager contract
         if (!borrowContract.wantBTC()) {
-            borrowContract.repayLoanETH{value: totalRepaymentAmount}(address(this));
+            borrowContract.repayLoanETH{value: msg.value}(address(this));
         } else {
             revert("This BorrowContract does not support WBTC repayment");
         }
@@ -258,8 +261,9 @@ contract Manager {
     * @dev Allow borrower to repay loan in BTC to the specified BorrowContract
     *
     * @param borrowContractAddress Address of BorrowContract
+    * @param amount Amount of repayment in BTC
     **/
-    function repayLoanBTC(address payable borrowContractAddress) public {
+    function repayLoanBTC(address payable borrowContractAddress, uint amount) public {
         // Check if the BorrowContract exists
         require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
@@ -269,10 +273,11 @@ contract Manager {
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
         require(borrowContract.repaymentPendingStatus(), "Repayment request not yet initiated");
         require(checkWBTCBalance(msg.sender) >= totalRepaymentAmount, "Insufficient balance");
+        require(amount == totalRepaymentAmount, "Incorrect WBTC amount");
 
         // Transfer BTC to the Manager contract
         if (borrowContract.wantBTC()) {
-            borrowContract.repayLoanBTC(address(this), totalRepaymentAmount);
+            borrowContract.repayLoanBTC(address(this), amount);
         } else {
             revert("This BorrowContract does not support ETH repayment");
         }
@@ -308,16 +313,6 @@ contract Manager {
         // Deduct user available balance in the pool
         _deductUserBalance(user, amount, wantBTC);
         emit FundWithdrawn(user, amount, wantBTC);
-    }
-
-
-    /**
-    * @dev Check how much remaining of the spender's WBTC allowance
-    *
-    * @return Spender's remaining allowance over the owner
-    **/
-    function checkAllowance(address _owner, address _spender) public view returns(uint) {
-        return wBtc.allowance(_owner, _spender);
     }
 
 
