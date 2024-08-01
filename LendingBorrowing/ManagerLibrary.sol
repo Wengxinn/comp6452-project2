@@ -7,6 +7,10 @@ import "./LendContract.sol";
 import "./WBTC.sol";
 import "./Oracle.sol";
 import "./Oracle_.sol";
+
+
+/// @title Library containing view and pure (static) functions and structs
+///        which can be invoked by Manager.sol
     
 library ManagerLibrary {
     // Struct to store user available balance for withdrawal (For a specific user, how much ETH and wBTC they have for withdrawal)
@@ -37,9 +41,11 @@ library ManagerLibrary {
 
 
     /**
-    * @dev Get the current daily interest rate corresponding to the currency
+    * @dev Get the current daily interest rate corresponding to the currency and real-time feed data
     *
     * @param wantBTC Unit of loan request (is in BTC)
+    * @param oracle Address of oracle
+    *
     * @return Current aily interest rate
     **/
     function getDailyInterestRate(bool wantBTC, Oracle_ oracle) external view returns (uint) {
@@ -58,18 +64,25 @@ library ManagerLibrary {
         return dailyRate;
     }
 
-        /**
+    /**
     * @dev Get the current BTC price in Eth
+    *
+    * @param oracle Address of oracle
     *
     * @return Current BTC/ETH price returned by oracle
     **/
     function getBtcInEtcPrice(Oracle_ oracle) external view returns (uint) {
         // The data returned from oracle is stored in 18 decimals
         return uint(oracle.getLatestBtcPriceInEth()) / 10**18; 
-
     }
 
 
+    /**
+    * @dev Check preconditions for ETH repayment deposit
+    *
+    * @param borrowContract Borrow Contract instance
+    * @param amount Amount of deposits
+    **/
     function checkDepositETHRepayment(BorrowContract borrowContract, uint amount) external view {
         // Get repayment amount
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount() * 1 ether;
@@ -79,6 +92,12 @@ library ManagerLibrary {
     }
 
 
+   /**
+    * @dev Check preconditions for WBTC repayment deposit
+    *
+    * @param borrowContract Borrow Contract instance
+    * @param amount Amount of deposits
+    **/
     function checkDepositWBTCRepayment(BorrowContract borrowContract, uint amount) external view {
         // Get repayment amount
         uint totalRepaymentAmount = borrowContract.totalRepaymentAmount();
@@ -87,6 +106,13 @@ library ManagerLibrary {
         require(borrowContract.repaymentPendingStatus(), "Repayment request pending");
     }
 
+
+   /**
+    * @dev Check preconditions for ETH collateral deposit
+    *
+    * @param borrowContract Borrow Contract instance
+    * @param amount Amount of deposits
+    **/
     function checkDepositETHCollateral(BorrowContract borrowContract, uint amount) external view {
         // Get contract's expected collateral amount
         uint collateralAmount = borrowContract.collateralAmount() * 1 ether;
@@ -95,6 +121,12 @@ library ManagerLibrary {
     }
 
 
+   /**
+    * @dev Check preconditions for WBTC collateral deposit
+    *
+    * @param borrowContract Borrow Contract instance
+    * @param amount Amount of deposits
+    **/
     function checkDepositWBTCCollateral(BorrowContract borrowContract, uint amount) external view {
         // Get contract's expected collateral amount
         uint collateralAmount = borrowContract.collateralAmount();

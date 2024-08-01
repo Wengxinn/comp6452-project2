@@ -82,8 +82,12 @@ contract ManagerHelper {
     *      where the required collateral has not been deposited, 
     *      and therefore not yet activated
     *
+    * @param borrower Address of borrower
     * @param borrowAmount Amount of loan request
     * @param wantBTC Unit of loan request (is in BTC)
+    * @param loanTerm Expected duration of the loan (1 week/1 month/3 months)
+    * @param btcInEthPrice Current BTC price in ETH
+    * @param dailyInterestRate Daily interest rate corresponding to the loan
     *
     * @return Address of new BorrowContract
     **/
@@ -116,6 +120,18 @@ contract ManagerHelper {
     }
 
 
+    /**
+    * @dev Deploy a new LendContract instance when a new lend request is initiated, 
+    *      where the fund has not been deposited,
+    *      and therefore not yet activated
+    *
+    * @param lender Address of lender
+    * @param lendAmount Amount of lend request
+    * @param wantBTC Unit of loan request (is in BTC)
+    * @param dailyInterestRate Daily interest rate corresponding to the loan
+    *
+    * @return Address of new BorrowContract
+    **/
     function deployLendContract(address lender, uint lendAmount, bool wantBTC, uint dailyInterestRate) public returns (address) {
         require(lendAmount > 0, "Borrow amount must be greater than 0");
 
@@ -203,18 +219,41 @@ contract ManagerHelper {
     }
 
 
+    /**
+    * @dev Get the BorrowContract of the specified address
+    *
+    * @param borrowContractAddress PayableAddress of BorrowContract
+    *
+    * @return Address of BorrowContract
+    **/
     function getBorrowContract(address payable borrowContractAddress) public view returns (BorrowContract){
         require(_loanExists[borrowContractAddress], "BorrowContract does not exist");
         BorrowContract borrowContract = BorrowContract(borrowContractAddress);
         return borrowContract;
     }
 
+
+    /**
+    * @dev Get the LendContract of the specified address
+    *
+    * @param lendContractAddress PayableAddress of LendContract
+    *
+    * @return Address of LendContract
+    **/
     function getLendContract(address lendContractAddress) public view returns (LendContract) {
         require(_lendExists[lendContractAddress], "LendContract does not exist");
         LendContract lendContract = LendContract(lendContractAddress);
         return lendContract;
     }
 
+
+    /**
+    * @dev Get available balances including (ETH and WBTC) in the pool of corresponding to the user account
+    *
+    * @param user Address of user
+    *
+    * @return User available balances in the bool
+    **/
     function getAvailableBalances(address user) public view returns (ManagerLibrary.UserAvailableBalance memory) {
         require(_availableBalanceExists[user], "User available balance does not exists");
         return availableBalances[user];

@@ -21,18 +21,32 @@ contract Oracle {
     }
 
 
+    /**
+    * @dev Get the current BTC price in Eth
+    *
+    * @return Current BTC/ETH price returned by oracle
+    **/
     function getLatestBtcPriceInEth() public view returns (int) {
         (, int price, , , ) = priceFeed.latestRoundData();
         return price;
     }
 
 
+    /**
+    * @dev Get the current 30-day ETH apr
+    *
+    * @return Current 30-day ETH apr stored in 7 decimals returned by oracle
+    **/
     function getLatestEth30DayApr() public view returns (int) {
         (, int ethApr, , , ) = eth30DayAprFeed.latestRoundData();
         return ethApr;
     }
 
-
+    /**
+    * @dev Get the current 1-Day BTC interest rate benchmark curve 
+    *
+    * @return Current 1-Day BTC interest rate benchmark curve stored in 8 decimals returned by oracle
+    **/
     function getBtc1DayBaseRate() public view returns (int) {
         (, int ethApr, , , ) = btc1DayBaseRateFeed.latestRoundData();
         return ethApr;

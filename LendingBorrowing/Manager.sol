@@ -65,6 +65,17 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Deploy a new either a lend or borrow contract instance 
+    *      according to the user input
+    *
+    * @param amount Amount of loan/lend request
+    * @param wantBTC Unit of loan/lend request (is in BTC)
+    * @param wantBorrow Transaction type (lend/borrow)
+    * @param loanTerm Expected duration of the loan, should be 0 when wantBorrow is false
+    *
+    * @return Address of new BorrowContract
+    **/
     function deployContract(uint amount, bool wantBTC, bool wantBorrow, uint loanTerm) public returns (address) {
         require(amount > 0, "Amount must be greater than 0");
 
@@ -84,6 +95,15 @@ contract Manager {
     }
 
 
+
+    /**
+    * @dev Allow user to deposit ETH including collateral and repayment deposits during borrowing,
+    *      activate the BorrowContract after successfully depositing collateral, 
+    *      deactivate the BorrowContract after successfully depositing repayment
+    *
+    * @param borrowContractAddress payable address of BorrowContract
+    * @param wantRepay True if depositing repayment
+    **/
     function borrowDepositETH(address payable borrowContractAddress, bool wantRepay) public payable {
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
@@ -111,6 +131,14 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Allow user to deposit WBTC including collateral and repayment deposits during borrowing,
+    *      activate the BorrowContract after successfully depositing collateral, 
+    *      deactivate the BorrowContract after successfully depositing repayment
+    *
+    * @param borrowContractAddress payable address of BorrowContract
+    * @param wantRepay True if depositing repayment
+    **/
     function borrowDepositWBTC(address payable borrowContractAddress, uint amount, bool wantRepay) public {
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
@@ -140,6 +168,14 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Allow user to deposit either ETH or WBTC during lending,
+    *      activate the LendContract after successfully depositing
+    *
+    * @param lendContractAddress payable address of LendContract
+    * @param amount Amount of deposit
+    * @param wantBTC True if depositing WBTC
+    **/
     function lendDeposit(address payable lendContractAddress, uint amount, bool wantBTC) public payable {
         // Get lend contract if exists
         LendContract lendContract = _h.getLendContract(lendContractAddress);
@@ -168,7 +204,7 @@ contract Manager {
     /**
     * @dev Allow borrower to request repayment of their loan when they are ready
     *
-    * @param borrowContractAddress Address of BorrowContract
+    * @param borrowContractAddress Payable address of BorrowContract
     **/
     function requestRepayment(address payable borrowContractAddress) public {
         // Get borrow contract if exists
@@ -187,6 +223,11 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Allow lender to request withdrawal of their deposits after mature
+    *
+    * @param lendContractAddress Payable address of LendContract
+    **/
     function requestLendingWithdrawal(address payable lendContractAddress) public {
         // Get lend contract if exists
         LendContract lendContract = _h.getLendContract(lendContractAddress);
@@ -197,6 +238,14 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Allow user to withdraw funds from their available balance in the pool,
+    *      which are released by the smart contract
+    *
+    * @param user Payable address of user
+    * @param amount Amount of withdrawal
+    * @param wantBTC Currency of the withdrawal
+    **/
     function withdrawFunds(address payable user, uint amount, bool wantBTC) public payable{
         require(user == msg.sender, "Only user corresponding to the available balance can withdraw funds");
         
@@ -241,6 +290,13 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Check user's current available balances for both ETH and WBTC in the pool
+    *
+    * @param user Address of user
+    *
+    * @return Current available balance in the pool corresponding to the user 
+    **/
     function checkUserAvailableBalance(address user) public view returns (ManagerLibrary.UserAvailableBalance memory) {
         return _h.getAvailableBalances(user);
     }
@@ -268,6 +324,15 @@ contract Manager {
     }
 
 
+    /**
+    * @dev Release assets such as funds and collateral to user available balance in the pool, 
+    *      which can be pulled by the corresponding user
+    *
+    * @param contractAddress Payable address of contract (BorrowContract/LendContract)
+    * @param wantFund True if releasing fund and false if releasing collateral in borrowing
+    *                 should always be false for lending
+    *
+    **/
     function releaseAsset(address payable contractAddress, bool wantFund, bool wantBorrow) public restricted {
         if (wantBorrow) {
             // Get borrow contract if exists

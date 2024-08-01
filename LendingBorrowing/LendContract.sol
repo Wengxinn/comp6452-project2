@@ -115,7 +115,12 @@ contract LendContract {
         emit LendContractActivated(address(this), startTime, remainingDays);
     }
 
-    
+
+    /**
+    * @dev Allow users to request for withdrawal only after the deposit is mature
+    *
+    * s@return Status of the request indicating if the user is allowed to withdraw
+    **/
     function requestWithdrawal() external contractActivated returns (bool) {
         // Stop the timer and compute duration in days
         durationInDays = (block.timestamp - startTime) / 1 days;
@@ -134,6 +139,11 @@ contract LendContract {
     }
 
 
+    /**
+    *@dev Get the number of remaining days until the deadline (mature date)
+    *
+    *@return Remaining days 
+    **/
     function getRemainingDays() public view contractActivated returns (uint) {
         if (block.timestamp >= deadline) {
             return 0;
@@ -143,6 +153,15 @@ contract LendContract {
     }
 
 
+    /**
+    * @dev Calculate compound interest following formula: (1 + daily rate) ** day, 
+    *      taking into account the loan duration in days, and daily interest rate
+    *
+    * @param _days Loan duration in days
+    * @param dailyRate Daily interest rate
+    *
+    * @return Compund interest stored in 7 decimals
+    **/
     function _calculateInterest(uint _days, uint dailyRate) private view contractActivated returns (uint) {
         // Compute compound interest according to the duration of loan (days)
         // Base
@@ -165,6 +184,15 @@ contract LendContract {
     }
 
 
+    /**
+    * @dev Calculate total withdrawal amount corresponding to the withdrawal request
+    * taking into account the compound interest for specific duration in days
+    *
+    * @param _lendAmount Amount of deposit
+    * @param _days Duration in days
+    *
+    * @return Total withdrawal amount required for the withdrawal request
+    **/
     function _calculateTotalWithdrawalAmount(uint _lendAmount, uint _days) private view contractActivated returns (uint) {
         // Get compound interest stored in 7 decimals
         uint compoundInterest7Decimals = _calculateInterest(_days, dailyInterestRate);
@@ -172,6 +200,11 @@ contract LendContract {
     }
 
 
+    /**
+    * @dev Get deadline after contract is activated
+    *
+    * @return Mature deadline
+    **/
     function _getDeadline() private view returns (uint) {
         return startTime + DEPOSITTERM;
     }

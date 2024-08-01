@@ -143,7 +143,6 @@ contract BorrowContract {
     /**
     * @dev Deactivate contract
     *      which can only be invoked by the manager contract
-    *
     **/
     function deactivateContract() external contractActivated restricted {
         require(msg.sender == creator);
@@ -156,6 +155,8 @@ contract BorrowContract {
     * @dev Allow users to request for repayment when they are ready
     *
     * @param balance User current account balance
+    *
+    *@return Current repayment pending status (if the user has the ability to pay)
     **/
     function requestRepayment(uint balance) external contractActivated returns (bool) {
         // Stop the timer and compute loan duration in days
@@ -267,7 +268,7 @@ contract BorrowContract {
     /**
     * @dev Get loan deadline after contract is activated
     *
-    * @return Loan deadline in days
+    * @return Loan deadline
     **/
     function _getLoanDeadline() private view returns (uint) {
         return startTime + (loanTerm * 1 days);
