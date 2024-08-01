@@ -87,6 +87,7 @@ contract BorrowContract {
         loanDurationInDays = 0;
         totalRepaymentAmount = 0;
         repaymentPendingStatus = false;
+        loanDeadline = 0;
         remainingDays = 0;
     }
 
@@ -144,8 +145,7 @@ contract BorrowContract {
     * @dev Deactivate contract
     *      which can only be invoked by the manager contract
     **/
-    function deactivateContract() external contractActivated restricted {
-        require(msg.sender == creator);
+    function deactivateContract() external contractActivated {
         activated = false;
         emit BorrowContractDeactivated(address(this));
     }

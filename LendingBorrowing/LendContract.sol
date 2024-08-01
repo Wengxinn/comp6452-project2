@@ -115,11 +115,16 @@ contract LendContract {
         emit LendContractActivated(address(this), startTime, remainingDays);
     }
 
+    function deactivateContract() external contractActivated {
+        activated = false;
+        emit LendContractDeactivated(address(this));
+    }
 
+    
     /**
     * @dev Allow users to request for withdrawal only after the deposit is mature
     *
-    * s@return Status of the request indicating if the user is allowed to withdraw
+    * @return Status of the request indicating if the user is allowed to withdraw
     **/
     function requestWithdrawal() external contractActivated returns (bool) {
         // Stop the timer and compute duration in days

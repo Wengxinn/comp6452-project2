@@ -42,6 +42,10 @@ contract Manager {
     // Event to be emitted when user successfully withdraw a fund from the smart contract
     event FundWithdrawn(address user, uint amount, bool wantBTC);
 
+    event ContractActivated(address borrowContractAddress, uint deadline, string email);
+
+    event ContractFunded(address contractAddress);
+
     // ===========================================================================================================================================================
     /** Constructor and user-interacted functions **/
 
@@ -95,6 +99,7 @@ contract Manager {
     }
 
 
+<<<<<<< HEAD
 
     /**
     * @dev Allow user to deposit ETH including collateral and repayment deposits during borrowing,
@@ -105,6 +110,9 @@ contract Manager {
     * @param wantRepay True if depositing repayment
     **/
     function borrowDepositETH(address payable borrowContractAddress, bool wantRepay) public payable {
+=======
+    function borrowDepositETH(address payable borrowContractAddress, bool wantRepay, string memory _email) public payable {
+>>>>>>> 6ff0c9b4ea4a0b1f9f13e442c27658cc72b9e57b
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit");
@@ -127,10 +135,13 @@ contract Manager {
 
             // Activate the borrow contract
             borrowContract.activateContract();
+
+            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline(), _email);
         }
     }
 
 
+<<<<<<< HEAD
     /**
     * @dev Allow user to deposit WBTC including collateral and repayment deposits during borrowing,
     *      activate the BorrowContract after successfully depositing collateral, 
@@ -140,6 +151,9 @@ contract Manager {
     * @param wantRepay True if depositing repayment
     **/
     function borrowDepositWBTC(address payable borrowContractAddress, uint amount, bool wantRepay) public {
+=======
+    function borrowDepositWBTC(address payable borrowContractAddress, uint amount, bool wantRepay, string memory _email) public {
+>>>>>>> 6ff0c9b4ea4a0b1f9f13e442c27658cc72b9e57b
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit");
@@ -164,6 +178,8 @@ contract Manager {
 
             // Activate the borrow contract
             borrowContract.activateContract();
+
+            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline(), _email);
         }
     }
 
@@ -301,6 +317,28 @@ contract Manager {
         return _h.getAvailableBalances(user);
     }
 
+    // function checkContractStatus(address payable contractAddress, bool wantBorrow) public view returns (bool) {
+    //     if (wantBorrow) {
+    //         // Get borrow contract if exists
+    //         BorrowContract borrowContract = _h.getBorrowContract(contractAddress);
+    //         return borrowContract.activated();
+    //     } else {
+    //         LendContract lendContract = _h.getLendContract(contractAddress);
+    //         return lendContract.activated();
+    //     }
+    // }
+
+    // function deactivateContract(address payable contractAddress, bool wantBorrow) public {
+    //     if (wantBorrow) {
+    //         // Get borrow contract if exists
+    //         BorrowContract borrowContract = _h.getBorrowContract(contractAddress);
+    //         borrowContract.deactivateContract();
+    //     } else {
+    //         LendContract lendContract = _h.getLendContract(contractAddress);
+    //         lendContract.deactivateContract();
+    //     }
+    // }
+
 
     // ===========================================================================================================================================================
     /** Restricted functions **/
@@ -353,6 +391,8 @@ contract Manager {
             require(!lendContract.activated() && lendContract.remainingDays() == 0, "Lend deposit is not mature");
             _h.addUserBalance(lendContract.lender(), lendContract.lendAmount(), lendContract.wantBTC());
         }
+
+        emit ContractFunded(contractAddress);
     }
     
 
