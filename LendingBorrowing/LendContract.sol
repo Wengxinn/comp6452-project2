@@ -115,6 +115,11 @@ contract LendContract {
         emit LendContractActivated(address(this), startTime, remainingDays);
     }
 
+    function deactivateContract() external contractActivated {
+        activated = false;
+        emit LendContractDeactivated(address(this));
+    }
+
     
     function requestWithdrawal() external contractActivated returns (bool) {
         // Stop the timer and compute duration in days
