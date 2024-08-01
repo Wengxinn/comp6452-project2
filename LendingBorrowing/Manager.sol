@@ -42,7 +42,7 @@ contract Manager {
     // Event to be emitted when user successfully withdraw a fund from the smart contract
     event FundWithdrawn(address user, uint amount, bool wantBTC);
 
-    event ContractActivated(address borrowContractAddress, uint deadline, string email);
+    event ContractActivated(address borrowContractAddress, uint deadline);
 
     event ContractFunded(address contractAddress);
 
@@ -99,7 +99,6 @@ contract Manager {
     }
 
 
-<<<<<<< HEAD
 
     /**
     * @dev Allow user to deposit ETH including collateral and repayment deposits during borrowing,
@@ -110,9 +109,6 @@ contract Manager {
     * @param wantRepay True if depositing repayment
     **/
     function borrowDepositETH(address payable borrowContractAddress, bool wantRepay) public payable {
-=======
-    function borrowDepositETH(address payable borrowContractAddress, bool wantRepay, string memory _email) public payable {
->>>>>>> 6ff0c9b4ea4a0b1f9f13e442c27658cc72b9e57b
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit");
@@ -136,12 +132,11 @@ contract Manager {
             // Activate the borrow contract
             borrowContract.activateContract();
 
-            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline(), _email);
+            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline());
         }
     }
 
 
-<<<<<<< HEAD
     /**
     * @dev Allow user to deposit WBTC including collateral and repayment deposits during borrowing,
     *      activate the BorrowContract after successfully depositing collateral, 
@@ -151,9 +146,6 @@ contract Manager {
     * @param wantRepay True if depositing repayment
     **/
     function borrowDepositWBTC(address payable borrowContractAddress, uint amount, bool wantRepay) public {
-=======
-    function borrowDepositWBTC(address payable borrowContractAddress, uint amount, bool wantRepay, string memory _email) public {
->>>>>>> 6ff0c9b4ea4a0b1f9f13e442c27658cc72b9e57b
         // Get borrow contract if exists
         BorrowContract borrowContract = _h.getBorrowContract(borrowContractAddress);
         require(msg.sender == borrowContract.borrower(), "Only borrower can deposit");
@@ -179,7 +171,7 @@ contract Manager {
             // Activate the borrow contract
             borrowContract.activateContract();
 
-            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline(), _email);
+            emit ContractActivated(borrowContractAddress, borrowContract.loanDeadline());
         }
     }
 
